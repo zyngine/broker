@@ -6,6 +6,7 @@ const { loadCommands }  = require('./src/handlers/commandHandler');
 const { handleInteraction } = require('./src/handlers/interactionHandler');
 const { startWebServer } = require('./web');
 
+console.log('[Broker] v2-web-dashboard starting up');
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.commands = new Collection();
 
