@@ -4,15 +4,8 @@ const { token } = require('./config');
 const { initDatabase } = require('./src/database/init');
 const { loadCommands }  = require('./src/handlers/commandHandler');
 const { handleInteraction } = require('./src/handlers/interactionHandler');
+const { startWebServer } = require('./web');
 
-let startWebServer = () => {};
-try {
-  ({ startWebServer } = require('./web'));
-} catch (err) {
-  console.error('[Broker] Failed to load web module:', err.message);
-}
-
-console.log('[Broker] v2-web-dashboard starting up');
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.commands = new Collection();
 

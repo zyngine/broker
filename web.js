@@ -5,7 +5,6 @@ const { getAllPropertiesForWeb, countAllPropertiesForWeb } = require('./src/data
 
 const PORT = process.env.PORT || 3000;
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || '';
-console.log(`[Web] module loaded. PORT=${PORT} PW_SET=${!!DASHBOARD_PASSWORD}`);
 
 // In-memory session store: token -> expiry timestamp
 const sessions = new Map();
@@ -44,7 +43,6 @@ function requireAuth(req, res, next) {
 }
 
 function startWebServer() {
-  console.log(`[Web] startWebServer() called. PORT=${process.env.PORT} PW_SET=${!!process.env.DASHBOARD_PASSWORD}`);
   if (!DASHBOARD_PASSWORD) {
     console.warn('[Web] DASHBOARD_PASSWORD is not set — web dashboard is disabled.');
     return;

@@ -1,3 +1,0 @@
-# Force fresh build — cache buster v1
-[phases.install]
-cmds = ["npm install"]
