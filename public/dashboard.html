@@ -375,6 +375,9 @@
           placeholder="Search by ID, address, owner, CID…"
         >
       </div>
+      <select class="filter-select" id="guild-filter">
+        <option value="">All Servers</option>
+      </select>
       <select class="filter-select" id="status-filter">
         <option value="">All Properties</option>
         <option value="owned">Owned</option>
@@ -427,9 +430,35 @@
         .replace(/"/g, '&quot;');
     }
 
+    async function loadGuilds() {
+      try {
+        const res = await fetch('/api/guilds');
+        if (!res.ok) return;
+        const guilds = await res.json();
+        const sel = document.getElementById('guild-filter');
+        // Clear existing options except "All Servers"
+        while (sel.options.length > 1) sel.remove(1);
+        guilds.forEach(g => {
+          const opt = document.createElement('option');
+          opt.value = g.id;
+          opt.textContent = g.name;
+          sel.appendChild(opt);
+        });
+        // If only one guild, auto-select it
+        if (guilds.length === 1) {
+          sel.value = guilds[0].id;
+          loadStats();
+          loadProperties();
+        }
+      } catch {}
+    }
+
     async function loadStats() {
       try {
-        const res = await fetch('/api/stats');
+        const guild = document.getElementById('guild-filter').value;
+        const params = new URLSearchParams();
+        if (guild) params.set('guild', guild);
+        const res = await fetch('/api/stats?' + params.toString());
         if (!res.ok) return;
         const d = await res.json();
         document.getElementById('stat-total').textContent  = d.total;
@@ -442,6 +471,7 @@
     async function loadProperties() {
       const search = document.getElementById('search-input').value.trim();
       const status = document.getElementById('status-filter').value;
+      const guild  = document.getElementById('guild-filter').value;
       const body   = document.getElementById('table-body');
 
       body.innerHTML = '<div class="state-msg"><div class="icon">⋯</div>Loading…</div>';
@@ -450,6 +480,7 @@
         const params = new URLSearchParams();
         if (search) params.set('search', search);
         if (status) params.set('status', status);
+        if (guild)  params.set('guild', guild);
 
         const res  = await fetch('/api/properties?' + params.toString());
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -491,9 +522,14 @@
       clearTimeout(searchTimer);
       searchTimer = setTimeout(loadProperties, 300);
     });
+    document.getElementById('guild-filter').addEventListener('change', () => {
+      loadStats();
+      loadProperties();
+    });
     document.getElementById('status-filter').addEventListener('change', loadProperties);
 
     // Initial load
+    loadGuilds();  // also triggers loadStats/loadProperties after guilds load
     loadStats();
     loadProperties();
 

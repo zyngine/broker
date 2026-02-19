@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
-const { getAllPropertiesForWeb, countAllPropertiesForWeb } = require('./src/database/queries');
+const { getAllPropertiesForWeb, countAllPropertiesForWeb, getDistinctGuildIds } = require('./src/database/queries');
 
 const PORT = process.env.PORT || 3000;
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || '';
@@ -42,7 +42,7 @@ function requireAuth(req, res, next) {
   res.redirect('/login');
 }
 
-function startWebServer() {
+function startWebServer(client) {
   if (!DASHBOARD_PASSWORD) {
     console.warn('[Web] DASHBOARD_PASSWORD is not set — web dashboard is disabled.');
     return;
@@ -93,10 +93,26 @@ function startWebServer() {
     res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
   });
 
+  // Guilds API — list of servers the bot is in, with names from Discord
+  app.get('/api/guilds', requireAuth, async (req, res) => {
+    try {
+      const guildIds = await getDistinctGuildIds();
+      const guilds = guildIds.map((id) => {
+        const g = client && client.guilds.cache.get(id);
+        return { id, name: g ? g.name : id };
+      });
+      res.json(guilds);
+    } catch (err) {
+      console.error('[Web] /api/guilds error:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
   // Stats API
   app.get('/api/stats', requireAuth, async (req, res) => {
     try {
-      const stats = await countAllPropertiesForWeb();
+      const { guild } = req.query;
+      const stats = await countAllPropertiesForWeb({ guildId: guild || null });
       res.json(stats);
     } catch (err) {
       console.error('[Web] /api/stats error:', err);
@@ -107,8 +123,8 @@ function startWebServer() {
   // Properties API
   app.get('/api/properties', requireAuth, async (req, res) => {
     try {
-      const { search, status } = req.query;
-      const properties = await getAllPropertiesForWeb({ search, status });
+      const { search, status, guild } = req.query;
+      const properties = await getAllPropertiesForWeb({ search, status, guildId: guild || null });
       res.json(properties);
     } catch (err) {
       console.error('[Web] /api/properties error:', err);

@@ -167,10 +167,14 @@ async function getPropertyHistory(guildId, propertyId) {
 
 // ─── Web Dashboard Queries (cross-guild) ─────────────────────────────────────
 
-async function getAllPropertiesForWeb({ search, status } = {}) {
+async function getAllPropertiesForWeb({ search, status, guildId } = {}) {
   let query = 'SELECT * FROM properties WHERE 1=1';
   const params = [];
 
+  if (guildId) {
+    params.push(guildId);
+    query += ` AND guild_id = $${params.length}`;
+  }
   if (status && status !== 'all') {
     params.push(status);
     query += ` AND status = $${params.length}`;
@@ -186,16 +190,30 @@ async function getAllPropertiesForWeb({ search, status } = {}) {
   return rows;
 }
 
-async function countAllPropertiesForWeb() {
+async function countAllPropertiesForWeb({ guildId } = {}) {
+  const params = [];
+  let where = '';
+  if (guildId) {
+    params.push(guildId);
+    where = `WHERE guild_id = $1`;
+  }
   const { rows } = await pool.query(
     `SELECT
        COUNT(*)                                     AS total,
        COUNT(*) FILTER (WHERE status = 'owned')     AS owned,
        COUNT(*) FILTER (WHERE status = 'available') AS available,
        COALESCE(SUM(price), 0)                      AS total_value
-     FROM properties`
+     FROM properties ${where}`,
+    params
   );
   return rows[0];
+}
+
+async function getDistinctGuildIds() {
+  const { rows } = await pool.query(
+    `SELECT DISTINCT guild_id FROM bot_config ORDER BY guild_id ASC`
+  );
+  return rows.map((r) => r.guild_id);
 }
 
 module.exports = {
@@ -203,5 +221,5 @@ module.exports = {
   createProperty, getProperty, updateProperty, updateNotes, repoProperty, deleteProperty,
   getAvailableProperties, getAllProperties, countProperties,
   insertHistory, getPropertyHistory,
-  getAllPropertiesForWeb, countAllPropertiesForWeb,
+  getAllPropertiesForWeb, countAllPropertiesForWeb, getDistinctGuildIds,
 };

@@ -24,7 +24,7 @@ client.commands = new Collection();
       console.log(`[Broker] Serving ${client.guilds.cache.size} guild(s)`);
     });
 
-    startWebServer();
+    startWebServer(client);
     await client.login(token);
   } catch (err) {
     console.error('[Broker] Fatal startup error:', err);
