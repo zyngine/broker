@@ -1,0 +1,173 @@
+const pool = require('./db');
+
+// ─── Bot Config ───────────────────────────────────────────────────────────────
+
+async function getConfig(guildId) {
+  const { rows } = await pool.query(
+    'SELECT * FROM bot_config WHERE guild_id = $1',
+    [guildId]
+  );
+  return rows[0] ?? null;
+}
+
+async function upsertConfig(guildId, fields) {
+  const { dashboard_channel_id, audit_channel_id, admin_role_id, agent_role_id } = fields;
+  const { rows } = await pool.query(
+    `INSERT INTO bot_config (guild_id, dashboard_channel_id, audit_channel_id, admin_role_id, agent_role_id, updated_at)
+     VALUES ($1, $2, $3, $4, $5, NOW())
+     ON CONFLICT (guild_id) DO UPDATE SET
+       dashboard_channel_id = EXCLUDED.dashboard_channel_id,
+       audit_channel_id     = EXCLUDED.audit_channel_id,
+       admin_role_id        = EXCLUDED.admin_role_id,
+       agent_role_id        = EXCLUDED.agent_role_id,
+       updated_at           = NOW()
+     RETURNING *`,
+    [guildId, dashboard_channel_id, audit_channel_id, admin_role_id, agent_role_id]
+  );
+  return rows[0];
+}
+
+async function setDashboardMessageId(guildId, messageId) {
+  await pool.query(
+    `UPDATE bot_config SET dashboard_message_id = $2, updated_at = NOW() WHERE guild_id = $1`,
+    [guildId, messageId]
+  );
+}
+
+// ─── Properties ───────────────────────────────────────────────────────────────
+
+async function createProperty(guildId, data) {
+  const { property_id, address, address_type, price, owner_name, owner_cid, owner_license, notes } = data;
+  const { rows } = await pool.query(
+    `INSERT INTO properties
+       (property_id, guild_id, address, address_type, price, owner_name, owner_cid, owner_license, notes, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'owned')
+     RETURNING *`,
+    [property_id, guildId, address, address_type, price, owner_name, owner_cid, owner_license, notes ?? null]
+  );
+  return rows[0];
+}
+
+async function getProperty(guildId, propertyId) {
+  const { rows } = await pool.query(
+    'SELECT * FROM properties WHERE guild_id = $1 AND property_id = $2',
+    [guildId, propertyId]
+  );
+  return rows[0] ?? null;
+}
+
+async function updateProperty(guildId, propertyId, data) {
+  const { address, address_type, price, owner_name, owner_cid, owner_license, notes } = data;
+  const { rows } = await pool.query(
+    `UPDATE properties SET
+       address       = $3,
+       address_type  = $4,
+       price         = $5,
+       owner_name    = $6,
+       owner_cid     = $7,
+       owner_license = $8,
+       notes         = $9,
+       status        = 'owned',
+       updated_at    = NOW()
+     WHERE guild_id = $1 AND property_id = $2
+     RETURNING *`,
+    [guildId, propertyId, address, address_type, price, owner_name, owner_cid, owner_license, notes ?? null]
+  );
+  return rows[0] ?? null;
+}
+
+async function updateNotes(guildId, propertyId, notes) {
+  const { rows } = await pool.query(
+    `UPDATE properties SET notes = $3, updated_at = NOW()
+     WHERE guild_id = $1 AND property_id = $2
+     RETURNING *`,
+    [guildId, propertyId, notes]
+  );
+  return rows[0] ?? null;
+}
+
+async function repoProperty(guildId, propertyId) {
+  const { rows } = await pool.query(
+    `UPDATE properties SET
+       owner_name    = NULL,
+       owner_cid     = NULL,
+       owner_license = NULL,
+       notes         = NULL,
+       status        = 'available',
+       updated_at    = NOW()
+     WHERE guild_id = $1 AND property_id = $2
+     RETURNING *`,
+    [guildId, propertyId]
+  );
+  return rows[0] ?? null;
+}
+
+async function deleteProperty(guildId, propertyId) {
+  const { rows } = await pool.query(
+    `DELETE FROM properties WHERE guild_id = $1 AND property_id = $2 RETURNING *`,
+    [guildId, propertyId]
+  );
+  return rows[0] ?? null;
+}
+
+async function getAvailableProperties(guildId) {
+  const { rows } = await pool.query(
+    `SELECT * FROM properties WHERE guild_id = $1 AND status = 'available' ORDER BY property_id ASC`,
+    [guildId]
+  );
+  return rows;
+}
+
+async function getAllProperties(guildId, { limit, offset }) {
+  const { rows } = await pool.query(
+    `SELECT * FROM properties WHERE guild_id = $1 ORDER BY property_id ASC LIMIT $2 OFFSET $3`,
+    [guildId, limit, offset]
+  );
+  return rows;
+}
+
+async function countProperties(guildId) {
+  const { rows } = await pool.query(
+    `SELECT
+       COUNT(*)                              AS total,
+       COUNT(*) FILTER (WHERE status = 'owned')     AS owned,
+       COUNT(*) FILTER (WHERE status = 'available') AS available,
+       COALESCE(SUM(price), 0)              AS total_value
+     FROM properties WHERE guild_id = $1`,
+    [guildId]
+  );
+  return rows[0];
+}
+
+// ─── History ─────────────────────────────────────────────────────────────────
+
+async function insertHistory(guildId, propertyId, action, performedById, performedByTag, oldData, newData) {
+  const { rows } = await pool.query(
+    `INSERT INTO property_history
+       (guild_id, property_id, action, performed_by_id, performed_by_tag, old_data, new_data)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING *`,
+    [guildId, propertyId, action, performedById, performedByTag,
+      oldData ? JSON.stringify(oldData) : null,
+      newData ? JSON.stringify(newData) : null]
+  );
+  return rows[0];
+}
+
+async function getPropertyHistory(guildId, propertyId) {
+  const { rows } = await pool.query(
+    `SELECT * FROM property_history
+     WHERE guild_id = $1 AND property_id = $2
+     ORDER BY created_at DESC
+     LIMIT 25`,
+    [guildId, propertyId]
+  );
+  return rows;
+}
+
+module.exports = {
+  getConfig, upsertConfig, setDashboardMessageId,
+  createProperty, getProperty, updateProperty, updateNotes, repoProperty, deleteProperty,
+  getAvailableProperties, getAllProperties, countProperties,
+  insertHistory, getPropertyHistory,
+};

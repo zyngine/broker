@@ -1,0 +1,261 @@
+const { EmbedBuilder } = require('discord.js');
+const { colors } = require('../../config');
+
+const FOOTER = { text: 'Broker  •  FiveM Real Estate' };
+
+function base(color) {
+  return new EmbedBuilder().setColor(color).setFooter(FOOTER).setTimestamp();
+}
+
+function formatPrice(n) {
+  return `$${Number(n).toLocaleString()}`;
+}
+
+// ─── General ─────────────────────────────────────────────────────────────────
+
+function buildSuccessEmbed(title, description) {
+  return base(colors.success).setTitle(`✅  ${title}`).setDescription(description);
+}
+
+function buildErrorEmbed(description) {
+  return base(colors.danger).setTitle('Error').setDescription(description);
+}
+
+function buildPermissionDeniedEmbed() {
+  return base(colors.danger)
+    .setTitle('Access Denied')
+    .setDescription('You do not have the required role to use this command.');
+}
+
+// ─── Property ────────────────────────────────────────────────────────────────
+
+function buildPropertyEmbed(property, titlePrefix = 'Property') {
+  const statusBadge = property.status === 'available' ? '🟡 Available' : '🟢 Owned';
+  return base(colors.primary)
+    .setTitle(`🏠  ${titlePrefix}  —  ${property.property_id}`)
+    .addFields(
+      { name: 'Address',       value: property.address,                    inline: false },
+      { name: 'Type',          value: property.address_type,               inline: true  },
+      { name: 'Price',         value: formatPrice(property.price),         inline: true  },
+      { name: 'Status',        value: statusBadge,                         inline: true  },
+      { name: 'Owner Name',    value: property.owner_name    ?? 'N/A',     inline: true  },
+      { name: 'Owner CID',     value: property.owner_cid     ?? 'N/A',     inline: true  },
+      { name: 'Owner License', value: property.owner_license ?? 'N/A',     inline: false },
+      { name: 'Notes',         value: property.notes         ?? 'None',    inline: false },
+    );
+}
+
+// ─── Confirmation ─────────────────────────────────────────────────────────────
+
+function buildRepoConfirmEmbed(property) {
+  return base(colors.danger)
+    .setTitle(`⚠️  Confirm Repossession  —  ${property.property_id}`)
+    .setDescription(
+      `This will clear all owner information and mark the property as **Available**.\n\n` +
+      `**Current Owner:** ${property.owner_name ?? 'N/A'}\n` +
+      `**CID:** ${property.owner_cid ?? 'N/A'}\n` +
+      `**License:** ${property.owner_license ?? 'N/A'}\n\n` +
+      `Are you sure?`
+    );
+}
+
+function buildRemoveConfirmEmbed(property) {
+  return base(colors.danger)
+    .setTitle(`⚠️  Confirm Permanent Removal  —  ${property.property_id}`)
+    .setDescription(
+      `This will **permanently delete** this property record from the system.\n\n` +
+      `**Address:** ${property.address}\n` +
+      `**Owner:** ${property.owner_name ?? 'N/A'}\n\n` +
+      `This action **cannot be undone**. Are you sure?`
+    );
+}
+
+function buildCancelledEmbed() {
+  return base(colors.muted).setTitle('Cancelled').setDescription('Action was cancelled.');
+}
+
+// ─── Search ──────────────────────────────────────────────────────────────────
+
+function buildSearchEmbed(property) {
+  const statusBadge = property.status === 'available' ? '🟡 Available' : '🟢 Owned';
+  return base(colors.primary)
+    .setTitle(`🔍  Property  —  ${property.property_id}`)
+    .addFields(
+      { name: 'Address',    value: `${property.address} (${property.address_type})`, inline: false },
+      { name: 'Owner',      value: property.owner_name ?? 'N/A',                     inline: true  },
+      { name: 'Owner CID',  value: property.owner_cid  ?? 'N/A',                     inline: true  },
+      { name: 'Status',     value: statusBadge,                                      inline: true  },
+    );
+}
+
+// ─── Available ───────────────────────────────────────────────────────────────
+
+function buildAvailableEmbed(properties) {
+  if (!properties.length) {
+    return base(colors.accent)
+      .setTitle('🟡  Available Properties')
+      .setDescription('There are no available properties at this time.');
+  }
+
+  const lines = properties.map((p) =>
+    `\`${p.property_id}\`  •  ${p.address}  •  ${formatPrice(p.price)}`
+  );
+
+  return base(colors.accent)
+    .setTitle(`🟡  Available Properties  (${properties.length})`)
+    .setDescription(lines.join('\n'));
+}
+
+// ─── History ─────────────────────────────────────────────────────────────────
+
+const ACTION_LABELS = {
+  add:          '🟢 Added',
+  transfer:     '🔄 Transferred',
+  repo:         '🔴 Repossessed',
+  notes_update: '📝 Notes Updated',
+  remove:       '⛔ Removed',
+};
+
+function buildHistoryEmbed(propertyId, rows) {
+  if (!rows.length) {
+    return base(colors.primary)
+      .setTitle(`📋  History  —  ${propertyId}`)
+      .setDescription('No history found for this property.');
+  }
+
+  const lines = rows.slice(0, 10).map((r) => {
+    const label  = ACTION_LABELS[r.action] ?? r.action.toUpperCase();
+    const ts     = `<t:${Math.floor(new Date(r.created_at).getTime() / 1000)}:f>`;
+    const by     = r.performed_by_tag;
+
+    let detail = '';
+    if (r.action === 'transfer' && r.old_data && r.new_data) {
+      const oldOwner = r.old_data.owner_name ?? 'N/A';
+      const newOwner = r.new_data.owner_name ?? 'N/A';
+      detail = `\n  ↳ ${oldOwner} → ${newOwner}`;
+    }
+    if (r.action === 'notes_update' && r.new_data) {
+      const note = r.new_data.notes ?? 'cleared';
+      detail = `\n  ↳ ${note.slice(0, 80)}${note.length > 80 ? '…' : ''}`;
+    }
+
+    return `${label}  by **${by}**  •  ${ts}${detail}`;
+  });
+
+  const footer = rows.length > 10 ? `\n*Showing 10 of ${rows.length} entries*` : '';
+
+  return base(colors.primary)
+    .setTitle(`📋  History  —  ${propertyId}`)
+    .setDescription(lines.join('\n\n') + footer);
+}
+
+// ─── Stats ───────────────────────────────────────────────────────────────────
+
+function buildStatsEmbed(stats) {
+  const total     = Number(stats.total);
+  const owned     = Number(stats.owned);
+  const available = Number(stats.available);
+  const value     = Number(stats.total_value);
+
+  const ownedPct = total > 0 ? ((owned / total) * 100).toFixed(0) : 0;
+
+  return base(colors.accent)
+    .setTitle('📊  Real Estate Market Statistics')
+    .addFields(
+      { name: 'Total Properties',   value: String(total),                 inline: true },
+      { name: 'Owned',              value: `${owned} (${ownedPct}%)`,     inline: true },
+      { name: 'Available',          value: String(available),             inline: true },
+      { name: 'Total Market Value', value: formatPrice(value),            inline: false },
+    );
+}
+
+// ─── Setup ───────────────────────────────────────────────────────────────────
+
+function buildSetupEmbed(config, dashChannel, auditChannel, adminRole, agentRole) {
+  return base(colors.success)
+    .setTitle('⚙️  Broker Configured')
+    .setDescription('The bot has been set up successfully.')
+    .addFields(
+      { name: 'Dashboard Channel', value: `<#${config.dashboard_channel_id}>`, inline: true  },
+      { name: 'Audit Log Channel', value: `<#${config.audit_channel_id}>`,     inline: true  },
+      { name: 'Admin Role',        value: `<@&${config.admin_role_id}>`,        inline: true  },
+      { name: 'Agent Role',        value: `<@&${config.agent_role_id}>`,        inline: true  },
+    );
+}
+
+// ─── Audit ───────────────────────────────────────────────────────────────────
+
+function buildAuditEmbed(opts) {
+  const { action, propertyId, performedByTag, performedById, oldData, newData } = opts;
+  const label = ACTION_LABELS[action] ?? action.toUpperCase();
+
+  const embed = base(colors.muted)
+    .setTitle(`${label}  —  ${propertyId}`)
+    .addFields(
+      { name: 'Performed By', value: `${performedByTag} (<@${performedById}>)`, inline: true },
+      { name: 'Property ID',  value: propertyId,                                 inline: true },
+    );
+
+  if (action === 'add' && newData) {
+    embed.addFields(
+      { name: 'Address',    value: `${newData.address} (${newData.address_type})`, inline: false },
+      { name: 'Owner',      value: newData.owner_name    ?? 'N/A',                 inline: true  },
+      { name: 'CID',        value: newData.owner_cid     ?? 'N/A',                 inline: true  },
+      { name: 'License',    value: newData.owner_license ?? 'N/A',                 inline: true  },
+      { name: 'Price',      value: formatPrice(newData.price),                     inline: true  },
+    );
+  } else if (action === 'transfer' && oldData && newData) {
+    const fields = ['owner_name', 'owner_cid', 'owner_license', 'price', 'address', 'notes'];
+    const diffs = fields.filter((f) => oldData[f] !== newData[f]);
+    if (diffs.length) {
+      const diffLines = diffs.map((f) =>
+        `**${f}:** ${oldData[f] ?? 'N/A'} → ${newData[f] ?? 'N/A'}`
+      ).join('\n');
+      embed.addFields({ name: 'Changes', value: diffLines, inline: false });
+    }
+  } else if (action === 'repo' && oldData) {
+    embed.addFields(
+      { name: 'Former Owner', value: oldData.owner_name    ?? 'N/A', inline: true },
+      { name: 'Former CID',   value: oldData.owner_cid     ?? 'N/A', inline: true },
+    );
+  } else if (action === 'notes_update') {
+    embed.addFields(
+      { name: 'New Notes', value: (newData?.notes ?? 'cleared').slice(0, 1024), inline: false },
+    );
+  } else if (action === 'remove' && oldData) {
+    embed.addFields(
+      { name: 'Address', value: `${oldData.address} (${oldData.address_type})`, inline: false },
+      { name: 'Owner',   value: oldData.owner_name ?? 'N/A',                    inline: true  },
+      { name: 'Price',   value: formatPrice(oldData.price),                     inline: true  },
+    );
+  }
+
+  return embed;
+}
+
+// ─── Dashboard ───────────────────────────────────────────────────────────────
+
+function buildDashboardEmbed(stats, tableText, page, totalPages) {
+  const total     = Number(stats.total);
+  const owned     = Number(stats.owned);
+  const available = Number(stats.available);
+  const value     = Number(stats.total_value);
+
+  const statsLine =
+    `\`Total: ${total}\`  •  \`Owned: ${owned}\`  •  \`Available: ${available}\`  •  \`Value: $${(value / 1_000_000).toFixed(1)}M\``;
+
+  return new EmbedBuilder()
+    .setColor(colors.accent)
+    .setTitle('🏢  BROKER  —  PROPERTY REGISTRY')
+    .setDescription(statsLine + '\n' + tableText)
+    .setFooter({ text: `Broker  •  FiveM Real Estate  •  Page ${page} of ${totalPages}` })
+    .setTimestamp();
+}
+
+module.exports = {
+  buildSuccessEmbed, buildErrorEmbed, buildPermissionDeniedEmbed,
+  buildPropertyEmbed, buildSearchEmbed,
+  buildRepoConfirmEmbed, buildRemoveConfirmEmbed, buildCancelledEmbed,
+  buildAvailableEmbed, buildHistoryEmbed, buildStatsEmbed,
+  buildSetupEmbed, buildAuditEmbed, buildDashboardEmbed,
+};
