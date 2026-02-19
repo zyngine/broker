@@ -4,6 +4,7 @@ const { token } = require('./config');
 const { initDatabase } = require('./src/database/init');
 const { loadCommands }  = require('./src/handlers/commandHandler');
 const { handleInteraction } = require('./src/handlers/interactionHandler');
+const { startWebServer } = require('./web');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.commands = new Collection();
@@ -23,6 +24,7 @@ client.commands = new Collection();
       console.log(`[Broker] Serving ${client.guilds.cache.size} guild(s)`);
     });
 
+    startWebServer();
     await client.login(token);
   } catch (err) {
     console.error('[Broker] Fatal startup error:', err);

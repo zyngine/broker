@@ -165,9 +165,43 @@ async function getPropertyHistory(guildId, propertyId) {
   return rows;
 }
 
+// ─── Web Dashboard Queries (cross-guild) ─────────────────────────────────────
+
+async function getAllPropertiesForWeb({ search, status } = {}) {
+  let query = 'SELECT * FROM properties WHERE 1=1';
+  const params = [];
+
+  if (status && status !== 'all') {
+    params.push(status);
+    query += ` AND status = $${params.length}`;
+  }
+  if (search) {
+    params.push(`%${search}%`);
+    const n = params.length;
+    query += ` AND (property_id ILIKE $${n} OR address ILIKE $${n} OR owner_name ILIKE $${n} OR owner_cid ILIKE $${n})`;
+  }
+
+  query += ' ORDER BY property_id ASC';
+  const { rows } = await pool.query(query, params);
+  return rows;
+}
+
+async function countAllPropertiesForWeb() {
+  const { rows } = await pool.query(
+    `SELECT
+       COUNT(*)                                     AS total,
+       COUNT(*) FILTER (WHERE status = 'owned')     AS owned,
+       COUNT(*) FILTER (WHERE status = 'available') AS available,
+       COALESCE(SUM(price), 0)                      AS total_value
+     FROM properties`
+  );
+  return rows[0];
+}
+
 module.exports = {
   getConfig, upsertConfig, setDashboardMessageId,
   createProperty, getProperty, updateProperty, updateNotes, repoProperty, deleteProperty,
   getAvailableProperties, getAllProperties, countProperties,
   insertHistory, getPropertyHistory,
+  getAllPropertiesForWeb, countAllPropertiesForWeb,
 };
