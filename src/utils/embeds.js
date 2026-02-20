@@ -80,6 +80,16 @@ function buildRemoveConfirmEmbed(property) {
     );
 }
 
+function buildPurgeAllConfirmEmbed(count) {
+  return base(colors.danger)
+    .setTitle('☠️  Confirm Full Registry Wipe')
+    .setDescription(
+      `This will **permanently erase every property and all ownership history** for this server.\n\n` +
+      `**${count} propert${count === 1 ? 'y' : 'ies'}** will be deleted. The archive will also be wiped.\n\n` +
+      `**This cannot be undone.** Are you absolutely sure?`
+    );
+}
+
 function buildPurgeConfirmEmbed(property) {
   return base(colors.danger)
     .setTitle(`☠️  Confirm Full Purge  —  ${property.property_id}`)
@@ -140,6 +150,7 @@ const ACTION_LABELS = {
   notes_update: '📝 Notes Updated',
   remove:       '⛔ Removed',
   house_change: '🔀 Property Changed',
+  purge_all:    '💀 Full Registry Wipe',
 };
 
 function buildHistoryEmbed(propertyId, rows) {
@@ -279,6 +290,10 @@ function buildAuditEmbed(opts) {
       { name: 'Owner',         value: newData.owner_name    ?? 'N/A', inline: true },
       { name: 'CID',           value: newData.owner_cid     ?? 'N/A', inline: true },
     );
+  } else if (action === 'purge_all') {
+    embed.addFields(
+      { name: 'Scope', value: 'All properties and full archive for this server', inline: false },
+    );
   }
 
   return embed;
@@ -305,7 +320,7 @@ function buildDashboardEmbed(stats, tableText, page, totalPages) {
 module.exports = {
   buildSuccessEmbed, buildErrorEmbed, buildPermissionDeniedEmbed,
   buildPropertyEmbed, buildSearchEmbed,
-  buildRepoConfirmEmbed, buildRemoveConfirmEmbed, buildPurgeConfirmEmbed, buildCancelledEmbed,
+  buildRepoConfirmEmbed, buildRemoveConfirmEmbed, buildPurgeConfirmEmbed, buildPurgeAllConfirmEmbed, buildCancelledEmbed,
   buildAvailableEmbed, buildHistoryEmbed, buildStatsEmbed,
   buildSetupEmbed, buildAuditEmbed, buildDashboardEmbed,
 };

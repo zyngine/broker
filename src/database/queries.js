@@ -129,6 +129,19 @@ async function purgeProperty(guildId, propertyId) {
   return rows[0] ?? null;
 }
 
+async function purgeAll(guildId) {
+  // Nuke every property and every history entry for the guild
+  const { rows } = await pool.query(
+    `DELETE FROM properties WHERE guild_id = $1 RETURNING *`,
+    [guildId]
+  );
+  await pool.query(
+    `DELETE FROM property_history WHERE guild_id = $1`,
+    [guildId]
+  );
+  return rows.length;
+}
+
 async function getRepossessedProperties(guildId) {
   const { rows } = await pool.query(
     `SELECT * FROM properties WHERE guild_id = $1 AND status = 'repossessed' ORDER BY property_id ASC`,
@@ -253,7 +266,7 @@ async function getArchiveHistory({ guildId, houseNumber } = {}) {
 
 module.exports = {
   getConfig, upsertConfig, setDashboardMessageId, getGuildByDashboardPassword,
-  createProperty, getProperty, updateProperty, updateNotes, repoProperty, deleteProperty, purgeProperty,
+  createProperty, getProperty, updateProperty, updateNotes, repoProperty, deleteProperty, purgeProperty, purgeAll,
   getRepossessedProperties, getAllProperties, countProperties,
   insertHistory, getPropertyHistory,
   getAllPropertiesForWeb, countAllPropertiesForWeb, getDistinctGuildIds, getArchiveHistory,

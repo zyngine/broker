@@ -245,11 +245,11 @@
       overflow: hidden;
     }
 
-    /* Properties table: House# | Postal | Tier | Prop. Type | Price | Owner | CID | Status */
+    /* Properties table: House# | Postal | Tier | Prop. Type | Owner | CID | Price | Status */
     .prop-header,
     .prop-row {
       display: grid;
-      grid-template-columns: 110px 90px 1.1fr 1.4fr 90px 1.3fr 1fr 100px;
+      grid-template-columns: 110px 90px 1.1fr 1.4fr 1.3fr 1fr 90px 100px;
       align-items: center;
     }
 
@@ -500,9 +500,9 @@
           <span>Postal</span>
           <span>Tier</span>
           <span>Prop. Type</span>
-          <span>Price</span>
           <span>Owner</span>
           <span>CID</span>
+          <span>Price</span>
           <span>Status</span>
         </div>
         <div class="table-body" id="table-body">
@@ -580,6 +580,7 @@
       notes_update: 'Notes Updated',
       remove:       'Removed',
       house_change: 'Property Changed',
+      purge_all:    'Registry Wiped',
     };
 
     // ── Tabs ──────────────────────────────────────────────────────────────────
@@ -679,9 +680,9 @@
               <div class="cell-postal">${dash(p.postal)}</div>
               <div class="cell-tier" title="${esc(p.property_tier)}">${dash(p.property_tier)}</div>
               <div class="cell-interior" title="${esc(p.interior_type)}">${dash(p.interior_type)}</div>
-              <div class="cell-price">${priceStr ? esc(priceStr) : '<span style="color:#2a2a2a">—</span>'}</div>
               <div class="cell-owner" title="${esc(p.owner_name)}">${dash(p.owner_name)}</div>
               <div class="cell-cid">${dash(p.owner_cid)}</div>
+              <div class="cell-price">${priceStr ? esc(priceStr) : '<span style="color:#2a2a2a">—</span>'}</div>
               <div>
                 <span class="pill ${isRepo ? 'pill-repossessed' : 'pill-owned'}">
                   ${isRepo ? 'Repossessed' : 'Owned'}

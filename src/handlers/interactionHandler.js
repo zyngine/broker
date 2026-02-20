@@ -1,6 +1,6 @@
 const { buildErrorEmbed, buildCancelledEmbed, buildSuccessEmbed } = require('../utils/embeds');
 const { handleModalSubmit } = require('./modalHandler');
-const { repoProperty, deleteProperty, purgeProperty, insertHistory, getProperty } = require('../database/queries');
+const { repoProperty, deleteProperty, purgeProperty, purgeAll, insertHistory, getProperty } = require('../database/queries');
 const { postAuditLog }  = require('../utils/auditLogger');
 const { refreshDashboard } = require('../utils/dashboard');
 
@@ -178,6 +178,40 @@ async function handleButton(client, interaction) {
 
     await interaction.update({
       embeds: [buildSuccessEmbed('Record Purged', `All records for \`${propertyId}\` have been permanently erased, including history.`)],
+      components: [],
+    });
+    return;
+  }
+
+  // ── Confirm Purge All ─────────────────────────────────────────────────────
+  if (action === 'confirm_purge_all') {
+    const [requestingUserId] = parts;
+    if (interaction.user.id !== requestingUserId) {
+      return interaction.reply({
+        embeds: [buildErrorEmbed('This confirmation is not for you.')],
+        ephemeral: true,
+      });
+    }
+
+    const guildId = interaction.guildId;
+    const deleted = await purgeAll(guildId);
+
+    await postAuditLog(client, guildId, {
+      action:         'purge_all',
+      propertyId:     'ALL',
+      performedById:  interaction.user.id,
+      performedByTag: interaction.user.tag,
+      oldData:        null,
+      newData:        null,
+    });
+
+    await refreshDashboard(client, guildId);
+
+    await interaction.update({
+      embeds: [buildSuccessEmbed(
+        'Registry Wiped',
+        `**${deleted} propert${deleted === 1 ? 'y' : 'ies'}** and all history have been permanently erased.`
+      )],
       components: [],
     });
     return;
