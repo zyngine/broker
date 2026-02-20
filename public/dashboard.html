@@ -108,7 +108,7 @@
     /* ── Stats Grid ── */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 16px;
       margin-bottom: 28px;
     }
@@ -136,9 +136,10 @@
       letter-spacing: -1.5px;
       line-height: 1;
     }
-    .stat-total .stat-value { color: #f0f0f0; }
-    .stat-owned .stat-value { color: #a855f7; }
-    .stat-repo  .stat-value { color: #ef4444; }
+    .stat-total      .stat-value { color: #f0f0f0; }
+    .stat-owned      .stat-value { color: #a855f7; }
+    .stat-repo       .stat-value { color: #ef4444; }
+    .stat-value-card .stat-value { color: #f59e0b; font-size: 1.8rem; }
 
     /* ── Tab nav ── */
     .tab-nav {
@@ -472,6 +473,10 @@
         <div class="stat-label">Repossessed</div>
         <div class="stat-value" id="stat-repo">—</div>
       </div>
+      <div class="stat-card stat-value-card">
+        <div class="stat-label">Market Value</div>
+        <div class="stat-value" id="stat-value">—</div>
+      </div>
     </div>
 
     <!-- Tab nav -->
@@ -658,6 +663,10 @@
         document.getElementById('stat-total').textContent = d.total;
         document.getElementById('stat-owned').textContent = d.owned;
         document.getElementById('stat-repo').textContent  = d.available;
+        const mv = Number(d.total_value);
+        document.getElementById('stat-value').textContent = mv
+          ? '$' + (mv >= 1_000_000 ? (mv / 1_000_000).toFixed(1) + 'M' : mv.toLocaleString('en-US'))
+          : '$0';
       } catch {}
     }
 

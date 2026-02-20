@@ -233,7 +233,8 @@ async function countAllPropertiesForWeb({ guildId } = {}) {
     `SELECT
        COUNT(*)                                        AS total,
        COUNT(*) FILTER (WHERE status = 'owned')       AS owned,
-       COUNT(*) FILTER (WHERE status = 'repossessed') AS available
+       COUNT(*) FILTER (WHERE status = 'repossessed') AS available,
+       COALESCE(SUM(price), 0)                        AS total_value
      FROM properties ${where}`,
     params
   );
