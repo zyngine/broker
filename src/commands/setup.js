@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ChannelType } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { getConfig, upsertConfig } = require('../database/queries');
 const { buildErrorEmbed, buildSetupEmbed } = require('../utils/embeds');
 const { refreshDashboard } = require('../utils/dashboard');
@@ -34,20 +34,13 @@ module.exports = {
     const guildId = interaction.guildId;
     const config  = await getConfig(guildId);
 
-    // Allow guild owner to run setup even with no config yet
-    const isOwner = interaction.member.id === interaction.guild.ownerId;
+    const isOwner    = interaction.member.id === interaction.guild.ownerId;
+    const isDiscordAdmin = interaction.member.permissions.has(PermissionFlagsBits.Administrator);
+    const hasAdminRole   = config?.admin_role_id && interaction.member.roles.cache.has(config.admin_role_id);
 
-    if (config) {
-      const adminRoleId = config.admin_role_id;
-      if (!isOwner && (!adminRoleId || !interaction.member.roles.cache.has(adminRoleId))) {
-        return interaction.reply({
-          embeds: [buildErrorEmbed('You must have the Admin role or be the server owner to run `/setup`.')],
-          ephemeral: true,
-        });
-      }
-    } else if (!isOwner) {
+    if (!isOwner && !isDiscordAdmin && !hasAdminRole) {
       return interaction.reply({
-        embeds: [buildErrorEmbed('Only the server owner can run the first-time `/setup`.')],
+        embeds: [buildErrorEmbed('You need the Administrator permission or the configured Admin role to run `/setup`.')],
         ephemeral: true,
       });
     }
