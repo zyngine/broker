@@ -40,25 +40,25 @@ module.exports = {
         .addStringOption((o) =>
           o.setName('postal')
             .setDescription('Postal code of the property')
-            .setRequired(false)
+            .setRequired(true)
             .setMaxLength(20)
         )
         .addStringOption((o) =>
           o.setName('property_tier')
             .setDescription('Property tier (e.g. Tier 1, Tier 2)')
-            .setRequired(false)
+            .setRequired(true)
             .setMaxLength(50)
         )
         .addStringOption((o) =>
           o.setName('property_type')
             .setDescription('Property type (e.g. 2-Bed Apartment, Villa)')
-            .setRequired(false)
+            .setRequired(true)
             .setMaxLength(100)
         )
         .addIntegerOption((o) =>
           o.setName('price')
             .setDescription('Property price in dollars')
-            .setRequired(false)
+            .setRequired(true)
             .setMinValue(0)
         )
     )
@@ -134,10 +134,10 @@ module.exports = {
       const property_id   = interaction.options.getString('house_number').trim().toUpperCase();
       const owner_name    = interaction.options.getString('owner_name').trim();
       const owner_cid     = interaction.options.getString('owner_cid').trim();
-      const postal        = interaction.options.getString('postal')?.trim()         || null;
-      const property_tier = interaction.options.getString('property_tier')?.trim()  || null;
-      const interior_type = interaction.options.getString('property_type')?.trim()  || null;
-      const price         = interaction.options.getInteger('price')                 ?? 0;
+      const postal        = interaction.options.getString('postal').trim();
+      const property_tier = interaction.options.getString('property_tier').trim();
+      const interior_type = interaction.options.getString('property_type').trim();
+      const price         = interaction.options.getInteger('price');
 
       await interaction.deferReply({ ephemeral: false });
 
