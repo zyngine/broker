@@ -57,3 +57,4 @@ ALTER TABLE properties ADD COLUMN IF NOT EXISTS postal        VARCHAR(20);
 ALTER TABLE properties ADD COLUMN IF NOT EXISTS property_tier VARCHAR(50);
 ALTER TABLE properties ADD COLUMN IF NOT EXISTS interior_type VARCHAR(100);
 UPDATE properties SET status = 'repossessed' WHERE status = 'available';
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS sold_by VARCHAR(255);

@@ -138,6 +138,7 @@ module.exports = {
       const property_tier = interaction.options.getString('property_tier').trim();
       const interior_type = interaction.options.getString('property_type').trim();
       const price         = interaction.options.getInteger('price');
+      const sold_by       = interaction.member.displayName;
 
       await interaction.deferReply({ ephemeral: false });
 
@@ -149,7 +150,7 @@ module.exports = {
       }
 
       const property = await createProperty(guildId, {
-        property_id, owner_name, owner_cid, postal, property_tier, interior_type, price,
+        property_id, owner_name, owner_cid, postal, property_tier, interior_type, price, sold_by,
       });
 
       await insertHistory(
@@ -194,11 +195,12 @@ module.exports = {
       const property_tier = interaction.options.getString('property_tier')?.trim()  ?? property.property_tier;
       const interior_type = interaction.options.getString('property_type')?.trim()  ?? property.interior_type;
       const price         = interaction.options.getInteger('price')                 ?? property.price ?? 0;
+      const sold_by       = interaction.member.displayName;
 
       await interaction.deferReply({ ephemeral: false });
 
       const updated = await updateProperty(guildId, propertyId, {
-        owner_name, owner_cid, postal, property_tier, interior_type, price,
+        owner_name, owner_cid, postal, property_tier, interior_type, price, sold_by,
       });
 
       await insertHistory(

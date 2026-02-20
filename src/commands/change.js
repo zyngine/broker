@@ -87,6 +87,7 @@ module.exports = {
       const price  = priceRaw  ?? oldProperty.price ?? 0;
 
       // ── Create the new property record ───────────────────────────────────
+      const sold_by = interaction.member.displayName;
       const newProperty = await createProperty(guildId, {
         property_id:   newId,
         owner_name:    oldProperty.owner_name,
@@ -95,6 +96,7 @@ module.exports = {
         property_tier: oldProperty.property_tier,
         interior_type: propertyType,
         price,
+        sold_by,
       });
 
       // ── Archive: record house_change on the OLD house number ─────────────

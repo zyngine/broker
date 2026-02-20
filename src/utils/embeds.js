@@ -51,6 +51,7 @@ function buildPropertyEmbed(property, titlePrefix = 'Property') {
       { name: 'Property Type', value: property.interior_type ?? 'N/A',     inline: true },
       { name: 'Postal',        value: property.postal        ?? 'N/A',     inline: true },
       { name: 'Price',         value: formatPrice(property.price),         inline: true },
+      { name: 'Sold By',       value: property.sold_by       ?? 'N/A',     inline: true },
       { name: 'Owner',         value: property.owner_name    ?? 'N/A',     inline: true },
       { name: 'CID',           value: property.owner_cid     ?? 'N/A',     inline: true },
     );
@@ -118,6 +119,7 @@ function buildSearchEmbed(property) {
       { name: 'Property Type', value: property.interior_type ?? 'N/A', inline: true },
       { name: 'Postal',        value: property.postal        ?? 'N/A', inline: true },
       { name: 'Price',         value: formatPrice(property.price),     inline: true },
+      { name: 'Sold By',       value: property.sold_by       ?? 'N/A', inline: true },
       { name: 'Owner',         value: property.owner_name    ?? 'N/A', inline: true },
       { name: 'CID',           value: property.owner_cid     ?? 'N/A', inline: true },
     );
@@ -232,6 +234,7 @@ const FIELD_LABELS = {
   property_tier: 'Property Tier',
   interior_type: 'Property Type',
   price:         'Price',
+  sold_by:       'Sold By',
 };
 
 function buildAuditEmbed(opts) {
@@ -252,11 +255,12 @@ function buildAuditEmbed(opts) {
       { name: 'Property Type', value: newData.interior_type ?? 'N/A', inline: true },
       { name: 'Postal',        value: newData.postal        ?? 'N/A', inline: true },
       { name: 'Price',         value: formatPrice(newData.price),     inline: true },
+      { name: 'Sold By',       value: newData.sold_by       ?? 'N/A', inline: true },
       { name: 'Owner',         value: newData.owner_name    ?? 'N/A', inline: true },
       { name: 'CID',           value: newData.owner_cid     ?? 'N/A', inline: true },
     );
   } else if (action === 'transfer' && oldData && newData) {
-    const fields = ['owner_name', 'owner_cid', 'postal', 'property_tier', 'interior_type', 'price'];
+    const fields = ['owner_name', 'owner_cid', 'postal', 'property_tier', 'interior_type', 'price', 'sold_by'];
     const diffs = fields.filter((f) => String(oldData[f]) !== String(newData[f]));
     if (diffs.length) {
       const diffLines = diffs.map((f) => {
@@ -287,6 +291,7 @@ function buildAuditEmbed(opts) {
       { name: 'Old House #',   value: oldData.property_id   ?? 'N/A', inline: true },
       { name: 'New House #',   value: newData.property_id   ?? 'N/A', inline: true },
       { name: 'Property Type', value: newData.interior_type ?? 'N/A', inline: true },
+      { name: 'Sold By',       value: newData.sold_by       ?? 'N/A', inline: true },
       { name: 'Owner',         value: newData.owner_name    ?? 'N/A', inline: true },
       { name: 'CID',           value: newData.owner_cid     ?? 'N/A', inline: true },
     );
