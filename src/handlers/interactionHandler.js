@@ -1,6 +1,6 @@
-const { buildErrorEmbed, buildCancelledEmbed } = require('../utils/embeds');
+const { buildErrorEmbed, buildCancelledEmbed, buildSuccessEmbed } = require('../utils/embeds');
 const { handleModalSubmit } = require('./modalHandler');
-const { repoProperty, deleteProperty, insertHistory, getProperty } = require('../database/queries');
+const { repoProperty, deleteProperty, purgeProperty, insertHistory, getProperty } = require('../database/queries');
 const { postAuditLog }  = require('../utils/auditLogger');
 const { refreshDashboard } = require('../utils/dashboard');
 
@@ -98,9 +98,8 @@ async function handleButton(client, interaction) {
 
     await refreshDashboard(client, guildId);
 
-    const { buildSuccessEmbed } = require('../utils/embeds');
     await interaction.update({
-      embeds: [buildSuccessEmbed('Property Repossessed', `\`${propertyId}\` has been cleared and marked as **Available**.`)],
+      embeds: [buildSuccessEmbed('Property Repossessed', `\`${propertyId}\` has been cleared and marked as **Repossessed**.`)],
       components: [],
     });
     return;
@@ -144,9 +143,41 @@ async function handleButton(client, interaction) {
 
     await refreshDashboard(client, guildId);
 
-    const { buildSuccessEmbed } = require('../utils/embeds');
     await interaction.update({
       embeds: [buildSuccessEmbed('Property Removed', `\`${propertyId}\` has been permanently deleted.`)],
+      components: [],
+    });
+    return;
+  }
+
+  // ── Confirm Purge ─────────────────────────────────────────────────────────
+  if (action === 'confirm_purge') {
+    const [propertyId, requestingUserId] = parts;
+    if (interaction.user.id !== requestingUserId) {
+      return interaction.reply({
+        embeds: [buildErrorEmbed('This confirmation is not for you.')],
+        ephemeral: true,
+      });
+    }
+
+    const guildId     = interaction.guildId;
+    const oldProperty = await getProperty(guildId, propertyId);
+
+    await purgeProperty(guildId, propertyId);
+
+    await postAuditLog(client, guildId, {
+      action: 'remove',
+      propertyId,
+      performedById: interaction.user.id,
+      performedByTag: interaction.user.tag,
+      oldData: oldProperty,
+      newData: null,
+    });
+
+    await refreshDashboard(client, guildId);
+
+    await interaction.update({
+      embeds: [buildSuccessEmbed('Record Purged', `All records for \`${propertyId}\` have been permanently erased, including history.`)],
       components: [],
     });
     return;

@@ -63,6 +63,18 @@ function buildRemoveConfirmEmbed(property) {
     );
 }
 
+function buildPurgeConfirmEmbed(property) {
+  return base(colors.danger)
+    .setTitle(`☠️  Confirm Full Purge  —  ${property.property_id}`)
+    .setDescription(
+      `This will **permanently erase all records** of this house number, including the full ownership history.\n\n` +
+      `**House Number:** ${property.property_id}\n` +
+      `**Current Owner:** ${property.owner_name ?? 'N/A'}\n` +
+      `**CID:** ${property.owner_cid ?? 'N/A'}\n\n` +
+      `The archive will also be wiped. **This cannot be undone.** Are you sure?`
+    );
+}
+
 function buildCancelledEmbed() {
   return base(colors.muted).setTitle('Cancelled').setDescription('Action was cancelled.');
 }
@@ -247,7 +259,7 @@ function buildDashboardEmbed(stats, tableText, page, totalPages) {
 module.exports = {
   buildSuccessEmbed, buildErrorEmbed, buildPermissionDeniedEmbed,
   buildPropertyEmbed, buildSearchEmbed,
-  buildRepoConfirmEmbed, buildRemoveConfirmEmbed, buildCancelledEmbed,
+  buildRepoConfirmEmbed, buildRemoveConfirmEmbed, buildPurgeConfirmEmbed, buildCancelledEmbed,
   buildAvailableEmbed, buildHistoryEmbed, buildStatsEmbed,
   buildSetupEmbed, buildAuditEmbed, buildDashboardEmbed,
 };
