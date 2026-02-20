@@ -50,10 +50,16 @@ module.exports = {
             .setMaxLength(50)
         )
         .addStringOption((o) =>
-          o.setName('interior_type')
-            .setDescription('Interior type (e.g. 2-Bed Apartment, Villa)')
+          o.setName('property_type')
+            .setDescription('Property type (e.g. 2-Bed Apartment, Villa)')
             .setRequired(false)
             .setMaxLength(100)
+        )
+        .addIntegerOption((o) =>
+          o.setName('price')
+            .setDescription('Property price in dollars')
+            .setRequired(false)
+            .setMinValue(0)
         )
     )
 
@@ -91,10 +97,16 @@ module.exports = {
             .setMaxLength(50)
         )
         .addStringOption((o) =>
-          o.setName('interior_type')
-            .setDescription('New interior type (leave blank to keep current)')
+          o.setName('property_type')
+            .setDescription('New property type (leave blank to keep current)')
             .setRequired(false)
             .setMaxLength(100)
+        )
+        .addIntegerOption((o) =>
+          o.setName('price')
+            .setDescription('New price in dollars (leave blank to keep current)')
+            .setRequired(false)
+            .setMinValue(0)
         )
     )
 
@@ -122,9 +134,10 @@ module.exports = {
       const property_id   = interaction.options.getString('house_number').trim().toUpperCase();
       const owner_name    = interaction.options.getString('owner_name').trim();
       const owner_cid     = interaction.options.getString('owner_cid').trim();
-      const postal        = interaction.options.getString('postal')?.trim()        || null;
-      const property_tier = interaction.options.getString('property_tier')?.trim() || null;
-      const interior_type = interaction.options.getString('interior_type')?.trim() || null;
+      const postal        = interaction.options.getString('postal')?.trim()         || null;
+      const property_tier = interaction.options.getString('property_tier')?.trim()  || null;
+      const interior_type = interaction.options.getString('property_type')?.trim()  || null;
+      const price         = interaction.options.getInteger('price')                 ?? 0;
 
       await interaction.deferReply({ ephemeral: false });
 
@@ -136,7 +149,7 @@ module.exports = {
       }
 
       const property = await createProperty(guildId, {
-        property_id, owner_name, owner_cid, postal, property_tier, interior_type,
+        property_id, owner_name, owner_cid, postal, property_tier, interior_type, price,
       });
 
       await insertHistory(
@@ -177,14 +190,15 @@ module.exports = {
       const owner_name    = interaction.options.getString('owner_name').trim();
       const owner_cid     = interaction.options.getString('owner_cid').trim();
       // Optional fields fall back to the current property values
-      const postal        = interaction.options.getString('postal')?.trim()        ?? property.postal;
-      const property_tier = interaction.options.getString('property_tier')?.trim() ?? property.property_tier;
-      const interior_type = interaction.options.getString('interior_type')?.trim() ?? property.interior_type;
+      const postal        = interaction.options.getString('postal')?.trim()         ?? property.postal;
+      const property_tier = interaction.options.getString('property_tier')?.trim()  ?? property.property_tier;
+      const interior_type = interaction.options.getString('property_type')?.trim()  ?? property.interior_type;
+      const price         = interaction.options.getInteger('price')                 ?? property.price ?? 0;
 
       await interaction.deferReply({ ephemeral: false });
 
       const updated = await updateProperty(guildId, propertyId, {
-        owner_name, owner_cid, postal, property_tier, interior_type,
+        owner_name, owner_cid, postal, property_tier, interior_type, price,
       });
 
       await insertHistory(

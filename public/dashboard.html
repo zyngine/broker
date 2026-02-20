@@ -245,11 +245,11 @@
       overflow: hidden;
     }
 
-    /* Properties table: House# | Postal | Tier | Interior | Owner | CID | Status */
+    /* Properties table: House# | Postal | Tier | Prop. Type | Price | Owner | CID | Status */
     .prop-header,
     .prop-row {
       display: grid;
-      grid-template-columns: 110px 90px 1.1fr 1.4fr 1.3fr 1fr 100px;
+      grid-template-columns: 110px 90px 1.1fr 1.4fr 90px 1.3fr 1fr 100px;
       align-items: center;
     }
 
@@ -309,6 +309,12 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .cell-price {
+      font-size: 0.8rem;
+      color: #f59e0b;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
     .cell-owner {
       font-size: 0.84rem;
@@ -493,7 +499,8 @@
           <span>House #</span>
           <span>Postal</span>
           <span>Tier</span>
-          <span>Interior</span>
+          <span>Prop. Type</span>
+          <span>Price</span>
           <span>Owner</span>
           <span>CID</span>
           <span>Status</span>
@@ -552,12 +559,27 @@
       return esc(v) || '<span style="color:#2a2a2a">—</span>';
     }
 
+    function fmtPrice(val) {
+      const n = Number(val);
+      if (!n) return null;
+      return '$' + n.toLocaleString('en-US');
+    }
+
+    function toEST(dateVal) {
+      return new Date(dateVal).toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+        month: 'short', day: 'numeric', year: 'numeric',
+        hour: 'numeric', minute: '2-digit', hour12: true,
+      }) + ' EST';
+    }
+
     const ACTION_LABELS = {
       add:          'Added',
       transfer:     'Transferred',
       repo:         'Repossessed',
       notes_update: 'Notes Updated',
       remove:       'Removed',
+      house_change: 'Property Changed',
     };
 
     // ── Tabs ──────────────────────────────────────────────────────────────────
@@ -650,12 +672,14 @@
 
         body.innerHTML = rows.map(p => {
           const isRepo = p.status === 'repossessed';
+          const priceStr = fmtPrice(p.price);
           return `
             <div class="prop-row">
               <div class="cell-id">${esc(p.property_id)}</div>
               <div class="cell-postal">${dash(p.postal)}</div>
               <div class="cell-tier" title="${esc(p.property_tier)}">${dash(p.property_tier)}</div>
               <div class="cell-interior" title="${esc(p.interior_type)}">${dash(p.interior_type)}</div>
+              <div class="cell-price">${priceStr ? esc(priceStr) : '<span style="color:#2a2a2a">—</span>'}</div>
               <div class="cell-owner" title="${esc(p.owner_name)}">${dash(p.owner_name)}</div>
               <div class="cell-cid">${dash(p.owner_cid)}</div>
               <div>
@@ -705,7 +729,7 @@
           const label    = ACTION_LABELS[r.action] || r.action.toUpperCase();
           const owner    = r.new_data?.owner_name ?? r.old_data?.owner_name ?? null;
           const cid      = r.new_data?.owner_cid  ?? r.old_data?.owner_cid  ?? null;
-          const date     = new Date(r.created_at).toLocaleString();
+          const date     = toEST(r.created_at);
           return `
             <div class="arc-row">
               <div class="cell-id">${esc(r.property_id)}</div>

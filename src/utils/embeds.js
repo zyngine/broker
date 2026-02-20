@@ -7,6 +7,22 @@ function base(color) {
   return new EmbedBuilder().setColor(color).setFooter(FOOTER).setTimestamp();
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatPrice(val) {
+  const n = Number(val);
+  if (!n) return 'N/A';
+  return '$' + n.toLocaleString('en-US');
+}
+
+function toEST(dateVal) {
+  return new Date(dateVal).toLocaleString('en-US', {
+    timeZone: 'America/New_York',
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true,
+  }) + ' EST';
+}
+
 // ─── General ─────────────────────────────────────────────────────────────────
 
 function buildSuccessEmbed(title, description) {
@@ -32,8 +48,9 @@ function buildPropertyEmbed(property, titlePrefix = 'Property') {
     .addFields(
       { name: 'Status',        value: statusBadge,                          inline: true },
       { name: 'Property Tier', value: property.property_tier ?? 'N/A',     inline: true },
-      { name: 'Interior Type', value: property.interior_type ?? 'N/A',     inline: true },
+      { name: 'Property Type', value: property.interior_type ?? 'N/A',     inline: true },
       { name: 'Postal',        value: property.postal        ?? 'N/A',     inline: true },
+      { name: 'Price',         value: formatPrice(property.price),         inline: true },
       { name: 'Owner',         value: property.owner_name    ?? 'N/A',     inline: true },
       { name: 'CID',           value: property.owner_cid     ?? 'N/A',     inline: true },
     );
@@ -88,8 +105,9 @@ function buildSearchEmbed(property) {
     .addFields(
       { name: 'Status',        value: statusBadge,                      inline: true },
       { name: 'Property Tier', value: property.property_tier ?? 'N/A', inline: true },
-      { name: 'Interior Type', value: property.interior_type ?? 'N/A', inline: true },
+      { name: 'Property Type', value: property.interior_type ?? 'N/A', inline: true },
       { name: 'Postal',        value: property.postal        ?? 'N/A', inline: true },
+      { name: 'Price',         value: formatPrice(property.price),     inline: true },
       { name: 'Owner',         value: property.owner_name    ?? 'N/A', inline: true },
       { name: 'CID',           value: property.owner_cid     ?? 'N/A', inline: true },
     );
@@ -121,6 +139,7 @@ const ACTION_LABELS = {
   repo:         '🔴 Repossessed',
   notes_update: '📝 Notes Updated',
   remove:       '⛔ Removed',
+  house_change: '🔀 Property Changed',
 };
 
 function buildHistoryEmbed(propertyId, rows) {
@@ -132,7 +151,7 @@ function buildHistoryEmbed(propertyId, rows) {
 
   const lines = rows.slice(0, 10).map((r) => {
     const label  = ACTION_LABELS[r.action] ?? r.action.toUpperCase();
-    const ts     = `<t:${Math.floor(new Date(r.created_at).getTime() / 1000)}:f>`;
+    const ts     = toEST(r.created_at);
     const by     = r.performed_by_tag;
 
     let detail = '';
@@ -141,12 +160,17 @@ function buildHistoryEmbed(propertyId, rows) {
       const newOwner = r.new_data.owner_name ?? 'N/A';
       detail = `\n  ↳ ${oldOwner} → ${newOwner}`;
     }
+    if (r.action === 'house_change' && r.old_data && r.new_data) {
+      const oldId = r.old_data.property_id ?? 'N/A';
+      const newId = r.new_data.property_id ?? 'N/A';
+      detail = `\n  ↳ House # ${oldId} → ${newId}`;
+    }
     if (r.action === 'notes_update' && r.new_data) {
       const note = r.new_data.notes ?? 'cleared';
       detail = `\n  ↳ ${note.slice(0, 80)}${note.length > 80 ? '…' : ''}`;
     }
 
-    return `${label}  by **${by}**  •  ${ts}${detail}`;
+    return `${label}  by **${by}**\n  ↳ ${ts}${detail}`;
   });
 
   const footer = rows.length > 10 ? `\n*Showing 10 of ${rows.length} entries*` : '';
@@ -190,6 +214,15 @@ function buildSetupEmbed(config, dashChannel, auditChannel, adminRole, agentRole
 
 // ─── Audit ───────────────────────────────────────────────────────────────────
 
+const FIELD_LABELS = {
+  owner_name:    'Owner',
+  owner_cid:     'CID',
+  postal:        'Postal',
+  property_tier: 'Property Tier',
+  interior_type: 'Property Type',
+  price:         'Price',
+};
+
 function buildAuditEmbed(opts) {
   const { action, propertyId, performedByTag, performedById, oldData, newData } = opts;
   const label = ACTION_LABELS[action] ?? action.toUpperCase();
@@ -199,29 +232,34 @@ function buildAuditEmbed(opts) {
     .addFields(
       { name: 'Performed By', value: `${performedByTag} (<@${performedById}>)`, inline: true },
       { name: 'Property ID',  value: propertyId,                                 inline: true },
+      { name: 'When',         value: toEST(new Date()),                          inline: true },
     );
 
   if (action === 'add' && newData) {
     embed.addFields(
       { name: 'Property Tier', value: newData.property_tier ?? 'N/A', inline: true },
-      { name: 'Interior Type', value: newData.interior_type ?? 'N/A', inline: true },
+      { name: 'Property Type', value: newData.interior_type ?? 'N/A', inline: true },
       { name: 'Postal',        value: newData.postal        ?? 'N/A', inline: true },
+      { name: 'Price',         value: formatPrice(newData.price),     inline: true },
       { name: 'Owner',         value: newData.owner_name    ?? 'N/A', inline: true },
       { name: 'CID',           value: newData.owner_cid     ?? 'N/A', inline: true },
     );
   } else if (action === 'transfer' && oldData && newData) {
-    const fields = ['owner_name', 'owner_cid', 'postal', 'property_tier', 'interior_type'];
-    const diffs = fields.filter((f) => oldData[f] !== newData[f]);
+    const fields = ['owner_name', 'owner_cid', 'postal', 'property_tier', 'interior_type', 'price'];
+    const diffs = fields.filter((f) => String(oldData[f]) !== String(newData[f]));
     if (diffs.length) {
-      const diffLines = diffs.map((f) =>
-        `**${f}:** ${oldData[f] ?? 'N/A'} → ${newData[f] ?? 'N/A'}`
-      ).join('\n');
+      const diffLines = diffs.map((f) => {
+        const label = FIELD_LABELS[f] ?? f;
+        const oldVal = f === 'price' ? formatPrice(oldData[f]) : (oldData[f] ?? 'N/A');
+        const newVal = f === 'price' ? formatPrice(newData[f]) : (newData[f] ?? 'N/A');
+        return `**${label}:** ${oldVal} → ${newVal}`;
+      }).join('\n');
       embed.addFields({ name: 'Changes', value: diffLines, inline: false });
     }
   } else if (action === 'repo' && oldData) {
     embed.addFields(
-      { name: 'Former Owner', value: oldData.owner_name    ?? 'N/A', inline: true },
-      { name: 'Former CID',   value: oldData.owner_cid     ?? 'N/A', inline: true },
+      { name: 'Former Owner', value: oldData.owner_name ?? 'N/A', inline: true },
+      { name: 'Former CID',   value: oldData.owner_cid  ?? 'N/A', inline: true },
     );
   } else if (action === 'notes_update') {
     embed.addFields(
@@ -229,9 +267,17 @@ function buildAuditEmbed(opts) {
     );
   } else if (action === 'remove' && oldData) {
     embed.addFields(
-      { name: 'Address', value: `${oldData.address} (${oldData.address_type})`, inline: false },
-      { name: 'Owner',   value: oldData.owner_name ?? 'N/A',                    inline: true  },
-      { name: 'Price',   value: formatPrice(oldData.price),                     inline: true  },
+      { name: 'House #', value: oldData.property_id ?? 'N/A', inline: true },
+      { name: 'Owner',   value: oldData.owner_name  ?? 'N/A', inline: true },
+      { name: 'CID',     value: oldData.owner_cid   ?? 'N/A', inline: true },
+    );
+  } else if (action === 'house_change' && oldData && newData) {
+    embed.addFields(
+      { name: 'Old House #',   value: oldData.property_id   ?? 'N/A', inline: true },
+      { name: 'New House #',   value: newData.property_id   ?? 'N/A', inline: true },
+      { name: 'Property Type', value: newData.interior_type ?? 'N/A', inline: true },
+      { name: 'Owner',         value: newData.owner_name    ?? 'N/A', inline: true },
+      { name: 'CID',           value: newData.owner_cid     ?? 'N/A', inline: true },
     );
   }
 
