@@ -245,11 +245,11 @@
       overflow: hidden;
     }
 
-    /* Properties table: House# | Postal | Tier | Prop. Type | Owner | CID | Sold By | Price | Last Updated | Status */
+    /* Properties table: House# | Postal | Tier | Prop. Type | Owner | CID | Price | Last Updated | Status | Sold By */
     .prop-header,
     .prop-row {
       display: grid;
-      grid-template-columns: 110px 90px 1.1fr 1.4fr 1.3fr 1fr 1fr 90px 155px 100px;
+      grid-template-columns: 110px 90px 1.1fr 1.4fr 1.3fr 1fr 90px 155px 100px 1fr;
       align-items: center;
     }
 
@@ -517,10 +517,10 @@
           <span>Prop. Type</span>
           <span>Owner</span>
           <span>CID</span>
-          <span>Sold By</span>
           <span>Price</span>
           <span>Last Updated</span>
           <span>Status</span>
+          <span>Sold By</span>
         </div>
         <div class="table-body" id="table-body">
           <div class="state-msg"><div class="icon">⋯</div>Loading properties…</div>
@@ -699,7 +699,6 @@
               <div class="cell-interior" title="${esc(p.interior_type)}">${dash(p.interior_type)}</div>
               <div class="cell-owner" title="${esc(p.owner_name)}">${dash(p.owner_name)}</div>
               <div class="cell-cid">${dash(p.owner_cid)}</div>
-              <div class="cell-sold-by" title="${esc(p.sold_by)}">${dash(p.sold_by)}</div>
               <div class="cell-price">${priceStr ? esc(priceStr) : '<span style="color:#2a2a2a">—</span>'}</div>
               <div class="cell-updated">${p.updated_at ? esc(toEST(p.updated_at)) : '<span style="color:#2a2a2a">—</span>'}</div>
               <div>
@@ -707,6 +706,7 @@
                   ${isRepo ? 'Repossessed' : 'Owned'}
                 </span>
               </div>
+              <div class="cell-sold-by" title="${esc(p.sold_by)}">${dash(p.sold_by)}</div>
             </div>
           `;
         }).join('');
