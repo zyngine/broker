@@ -145,7 +145,7 @@ async function purgeAll(guildId) {
 
 async function getRepossessedProperties(guildId) {
   const { rows } = await pool.query(
-    `SELECT * FROM properties WHERE guild_id = $1 AND status = 'repossessed' ORDER BY property_id ASC`,
+    `SELECT * FROM properties WHERE guild_id = $1 AND status = 'repossessed' ORDER BY LENGTH(property_id) ASC, property_id ASC`,
     [guildId]
   );
   return rows;
@@ -153,7 +153,7 @@ async function getRepossessedProperties(guildId) {
 
 async function getAllProperties(guildId, { limit, offset }) {
   const { rows } = await pool.query(
-    `SELECT * FROM properties WHERE guild_id = $1 ORDER BY property_id ASC LIMIT $2 OFFSET $3`,
+    `SELECT * FROM properties WHERE guild_id = $1 ORDER BY LENGTH(property_id) ASC, property_id ASC LIMIT $2 OFFSET $3`,
     [guildId, limit, offset]
   );
   return rows;
@@ -217,7 +217,7 @@ async function getAllPropertiesForWeb({ search, status, guildId } = {}) {
     query += ` AND (property_id ILIKE $${n} OR owner_name ILIKE $${n} OR owner_cid ILIKE $${n} OR postal ILIKE $${n} OR property_tier ILIKE $${n})`;
   }
 
-  query += ' ORDER BY property_id ASC';
+  query += ' ORDER BY LENGTH(property_id) ASC, property_id ASC';
   const { rows } = await pool.query(query, params);
   return rows;
 }
