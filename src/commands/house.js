@@ -20,28 +20,10 @@ module.exports = {
       sub.setName('add')
         .setDescription('Add a new property to the registry')
         .addStringOption((o) =>
-          o.setName('property_id')
-            .setDescription('Unique property ID (e.g. PROP001)')
+          o.setName('house_number')
+            .setDescription('House number / property ID (e.g. 42, PROP001)')
             .setRequired(true)
             .setMaxLength(50)
-        )
-        .addStringOption((o) =>
-          o.setName('address')
-            .setDescription('Full property address')
-            .setRequired(true)
-            .setMaxLength(255)
-        )
-        .addStringOption((o) =>
-          o.setName('address_type')
-            .setDescription('Type of property (e.g. House, Apartment, Commercial)')
-            .setRequired(true)
-            .setMaxLength(50)
-        )
-        .addIntegerOption((o) =>
-          o.setName('price')
-            .setDescription('Sale price in dollars (e.g. 450000)')
-            .setRequired(true)
-            .setMinValue(0)
         )
         .addStringOption((o) =>
           o.setName('owner_name')
@@ -56,16 +38,22 @@ module.exports = {
             .setMaxLength(100)
         )
         .addStringOption((o) =>
-          o.setName('owner_license')
-            .setDescription('Owner license number')
-            .setRequired(true)
-            .setMaxLength(255)
+          o.setName('postal')
+            .setDescription('Postal code of the property')
+            .setRequired(false)
+            .setMaxLength(20)
         )
         .addStringOption((o) =>
-          o.setName('notes')
-            .setDescription('Optional notes about this property')
+          o.setName('property_tier')
+            .setDescription('Property tier (e.g. Tier 1, Tier 2)')
             .setRequired(false)
-            .setMaxLength(1000)
+            .setMaxLength(50)
+        )
+        .addStringOption((o) =>
+          o.setName('interior_type')
+            .setDescription('Interior type (e.g. 2-Bed Apartment, Villa)')
+            .setRequired(false)
+            .setMaxLength(100)
         )
     )
 
@@ -74,8 +62,8 @@ module.exports = {
       sub.setName('transfer')
         .setDescription('Transfer a property to a new owner')
         .addStringOption((o) =>
-          o.setName('property_id')
-            .setDescription('Property ID to transfer')
+          o.setName('house_number')
+            .setDescription('House number / property ID to transfer')
             .setRequired(true)
         )
         .addStringOption((o) =>
@@ -91,34 +79,22 @@ module.exports = {
             .setMaxLength(100)
         )
         .addStringOption((o) =>
-          o.setName('owner_license')
-            .setDescription('New owner license')
-            .setRequired(true)
-            .setMaxLength(255)
-        )
-        .addStringOption((o) =>
-          o.setName('address')
-            .setDescription('New address (leave blank to keep current)')
+          o.setName('postal')
+            .setDescription('New postal code (leave blank to keep current)')
             .setRequired(false)
-            .setMaxLength(255)
+            .setMaxLength(20)
         )
         .addStringOption((o) =>
-          o.setName('address_type')
-            .setDescription('New address type (leave blank to keep current)')
+          o.setName('property_tier')
+            .setDescription('New property tier (leave blank to keep current)')
             .setRequired(false)
             .setMaxLength(50)
         )
-        .addIntegerOption((o) =>
-          o.setName('price')
-            .setDescription('New price in dollars (leave blank to keep current)')
-            .setRequired(false)
-            .setMinValue(0)
-        )
         .addStringOption((o) =>
-          o.setName('notes')
-            .setDescription('Notes (leave blank to keep current)')
+          o.setName('interior_type')
+            .setDescription('New interior type (leave blank to keep current)')
             .setRequired(false)
-            .setMaxLength(1000)
+            .setMaxLength(100)
         )
     )
 
@@ -127,8 +103,8 @@ module.exports = {
       sub.setName('remove')
         .setDescription('[ADMIN] Permanently delete a property from the registry')
         .addStringOption((o) =>
-          o.setName('property_id')
-            .setDescription('Property ID to permanently delete')
+          o.setName('house_number')
+            .setDescription('House number / property ID to permanently delete')
             .setRequired(true)
         )
     ),
@@ -143,14 +119,12 @@ module.exports = {
       const allowed = await checkPermission(interaction, config, 'agent');
       if (!allowed) return;
 
-      const property_id   = interaction.options.getString('property_id').trim().toUpperCase();
-      const address       = interaction.options.getString('address').trim();
-      const address_type  = interaction.options.getString('address_type').trim();
-      const price         = interaction.options.getInteger('price');
+      const property_id   = interaction.options.getString('house_number').trim().toUpperCase();
       const owner_name    = interaction.options.getString('owner_name').trim();
       const owner_cid     = interaction.options.getString('owner_cid').trim();
-      const owner_license = interaction.options.getString('owner_license').trim();
-      const notes         = interaction.options.getString('notes')?.trim() || null;
+      const postal        = interaction.options.getString('postal')?.trim()        || null;
+      const property_tier = interaction.options.getString('property_tier')?.trim() || null;
+      const interior_type = interaction.options.getString('interior_type')?.trim() || null;
 
       await interaction.deferReply({ ephemeral: false });
 
@@ -162,7 +136,7 @@ module.exports = {
       }
 
       const property = await createProperty(guildId, {
-        property_id, address, address_type, price, owner_name, owner_cid, owner_license, notes,
+        property_id, owner_name, owner_cid, postal, property_tier, interior_type,
       });
 
       await insertHistory(
@@ -190,7 +164,7 @@ module.exports = {
       const allowed = await checkPermission(interaction, config, 'agent');
       if (!allowed) return;
 
-      const propertyId = interaction.options.getString('property_id').trim().toUpperCase();
+      const propertyId = interaction.options.getString('house_number').trim().toUpperCase();
       const property   = await getProperty(guildId, propertyId);
 
       if (!property) {
@@ -202,17 +176,15 @@ module.exports = {
 
       const owner_name    = interaction.options.getString('owner_name').trim();
       const owner_cid     = interaction.options.getString('owner_cid').trim();
-      const owner_license = interaction.options.getString('owner_license').trim();
       // Optional fields fall back to the current property values
-      const address       = interaction.options.getString('address')?.trim()      || property.address;
-      const address_type  = interaction.options.getString('address_type')?.trim() || property.address_type;
-      const price         = interaction.options.getInteger('price') ?? property.price;
-      const notes         = interaction.options.getString('notes')?.trim()        || property.notes;
+      const postal        = interaction.options.getString('postal')?.trim()        ?? property.postal;
+      const property_tier = interaction.options.getString('property_tier')?.trim() ?? property.property_tier;
+      const interior_type = interaction.options.getString('interior_type')?.trim() ?? property.interior_type;
 
       await interaction.deferReply({ ephemeral: false });
 
       const updated = await updateProperty(guildId, propertyId, {
-        address, address_type, price, owner_name, owner_cid, owner_license, notes,
+        owner_name, owner_cid, postal, property_tier, interior_type,
       });
 
       await insertHistory(
@@ -240,7 +212,7 @@ module.exports = {
       const allowed = await checkPermission(interaction, config, 'admin');
       if (!allowed) return;
 
-      const propertyId = interaction.options.getString('property_id').trim().toUpperCase();
+      const propertyId = interaction.options.getString('house_number').trim().toUpperCase();
       const property   = await getProperty(guildId, propertyId);
 
       if (!property) {

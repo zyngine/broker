@@ -108,12 +108,11 @@
     /* ── Stats Grid ── */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 16px;
       margin-bottom: 28px;
     }
-    @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 480px) { .stats-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 700px) { .stats-grid { grid-template-columns: 1fr; } }
 
     .stat-card {
       background: rgba(255, 255, 255, 0.04);
@@ -137,10 +136,40 @@
       letter-spacing: -1.5px;
       line-height: 1;
     }
-    .stat-total  .stat-value { color: #f0f0f0; }
-    .stat-owned  .stat-value { color: #a855f7; }
-    .stat-avail  .stat-value { color: #f59e0b; }
-    .stat-market .stat-value { color: #34d399; }
+    .stat-total .stat-value { color: #f0f0f0; }
+    .stat-owned .stat-value { color: #a855f7; }
+    .stat-repo  .stat-value { color: #ef4444; }
+
+    /* ── Tab nav ── */
+    .tab-nav {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      padding-bottom: 0;
+    }
+    .tab-btn {
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: #444;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+      margin-bottom: -1px;
+    }
+    .tab-btn:hover { color: #888; }
+    .tab-btn.active {
+      color: #a855f7;
+      border-bottom-color: #7c3aed;
+    }
+
+    /* ── Tab panels ── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
 
     /* ── Controls ── */
     .controls {
@@ -216,19 +245,27 @@
       overflow: hidden;
     }
 
-    /* grid columns: ID | Address | Type | Price | Owner | CID | License | Status */
-    .table-header,
-    .table-row {
+    /* Properties table: House# | Postal | Tier | Interior | Owner | CID | Status */
+    .prop-header,
+    .prop-row {
       display: grid;
-      grid-template-columns: 100px 2fr 1fr 1fr 1.3fr 0.9fr 1.8fr 96px;
+      grid-template-columns: 110px 90px 1.1fr 1.4fr 1.3fr 1fr 100px;
       align-items: center;
     }
 
-    .table-header {
+    /* Archive table: House# | Action | Owner | CID | Date | By */
+    .arc-header,
+    .arc-row {
+      display: grid;
+      grid-template-columns: 110px 120px 1.3fr 1fr 160px 1.2fr;
+      align-items: center;
+    }
+
+    .table-header, .prop-header, .arc-header {
       padding: 14px 22px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
-    .table-header span {
+    .table-header span, .prop-header span, .arc-header span {
       font-size: 0.68rem;
       font-weight: 600;
       color: #333;
@@ -238,13 +275,13 @@
 
     .table-body { display: flex; flex-direction: column; }
 
-    .table-row {
+    .prop-row, .arc-row {
       padding: 13px 22px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.035);
       transition: background 0.15s;
     }
-    .table-row:last-child { border-bottom: none; }
-    .table-row:hover { background: rgba(255, 255, 255, 0.025); }
+    .prop-row:last-child, .arc-row:last-child { border-bottom: none; }
+    .prop-row:hover, .arc-row:hover { background: rgba(255, 255, 255, 0.025); }
 
     .cell-id {
       font-size: 0.84rem;
@@ -252,23 +289,26 @@
       color: #e0e0e0;
       font-variant-numeric: tabular-nums;
     }
-    .cell-address {
-      font-size: 0.84rem;
+    .cell-postal {
+      font-size: 0.8rem;
+      color: #666;
+      font-variant-numeric: tabular-nums;
+    }
+    .cell-tier {
+      font-size: 0.82rem;
       color: #bbb;
-      padding-right: 14px;
+      padding-right: 12px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .cell-type {
-      font-size: 0.8rem;
-      color: #666;
-    }
-    .cell-price {
-      font-size: 0.84rem;
-      font-weight: 600;
-      color: #e0e0e0;
-      font-variant-numeric: tabular-nums;
+    .cell-interior {
+      font-size: 0.82rem;
+      color: #999;
+      padding-right: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .cell-owner {
       font-size: 0.84rem;
@@ -283,14 +323,22 @@
       color: #555;
       font-variant-numeric: tabular-nums;
     }
-    .cell-license {
-      font-size: 0.75rem;
+    .cell-action {
+      font-size: 0.8rem;
+      color: #888;
+      font-weight: 500;
+    }
+    .cell-date {
+      font-size: 0.78rem;
       color: #444;
-      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .cell-by {
+      font-size: 0.8rem;
+      color: #555;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      padding-right: 14px;
     }
 
     /* Status pills */
@@ -318,12 +366,12 @@
       border: 1px solid rgba(124, 58, 237, 0.22);
     }
     .pill-owned::before { background: #7c3aed; }
-    .pill-available {
-      background: rgba(245, 158, 11, 0.12);
-      color: #f59e0b;
-      border: 1px solid rgba(245, 158, 11, 0.22);
+    .pill-repossessed {
+      background: rgba(239, 68, 68, 0.12);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.22);
     }
-    .pill-available::before { background: #f59e0b; }
+    .pill-repossessed::before { background: #ef4444; }
 
     /* Empty / loading states */
     .state-msg {
@@ -333,6 +381,44 @@
       font-size: 0.9rem;
     }
     .state-msg .icon { font-size: 2.4rem; margin-bottom: 14px; }
+
+    /* Archive search bar */
+    .arc-search-wrap {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .arc-search-input {
+      flex: 1;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      color: #f0f0f0;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .arc-search-input:focus { border-color: rgba(124, 58, 237, 0.4); }
+    .arc-search-input::placeholder { color: #333; }
+    .arc-search-btn {
+      padding: 12px 22px;
+      background: rgba(124, 58, 237, 0.18);
+      border: 1px solid rgba(124, 58, 237, 0.3);
+      border-radius: 12px;
+      color: #a855f7;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .arc-search-btn:hover {
+      background: rgba(124, 58, 237, 0.3);
+      border-color: rgba(124, 58, 237, 0.5);
+      color: #c084fc;
+    }
   </style>
 </head>
 <body>
@@ -360,77 +446,99 @@
         <div class="stat-label">Owned</div>
         <div class="stat-value" id="stat-owned">—</div>
       </div>
-      <div class="stat-card stat-avail">
-        <div class="stat-label">Available</div>
-        <div class="stat-value" id="stat-avail">—</div>
-      </div>
-      <div class="stat-card stat-market">
-        <div class="stat-label">Market Value</div>
-        <div class="stat-value" id="stat-market">—</div>
+      <div class="stat-card stat-repo">
+        <div class="stat-label">Repossessed</div>
+        <div class="stat-value" id="stat-repo">—</div>
       </div>
     </div>
 
-    <!-- Controls -->
-    <div class="controls">
-      <div class="search-wrap">
-        <svg viewBox="0 0 24 24">
-          <circle cx="11" cy="11" r="8"/>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
+    <!-- Tab nav -->
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="properties">Properties</button>
+      <button class="tab-btn" data-tab="archive">Archive</button>
+    </div>
+
+    <!-- ── Properties Tab ── -->
+    <div class="tab-panel active" id="tab-properties">
+
+      <!-- Controls -->
+      <div class="controls">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            type="text"
+            class="search-input"
+            id="search-input"
+            placeholder="Search by house #, owner, CID, postal, tier…"
+          >
+        </div>
+        <select class="filter-select" id="guild-filter">
+          <option value="">All Servers</option>
+        </select>
+        <select class="filter-select" id="status-filter">
+          <option value="">All Properties</option>
+          <option value="owned">Owned</option>
+          <option value="repossessed">Repossessed</option>
+        </select>
+      </div>
+
+      <div class="result-count" id="result-count"></div>
+
+      <!-- Properties Table -->
+      <div class="table-wrap">
+        <div class="prop-header">
+          <span>House #</span>
+          <span>Postal</span>
+          <span>Tier</span>
+          <span>Interior</span>
+          <span>Owner</span>
+          <span>CID</span>
+          <span>Status</span>
+        </div>
+        <div class="table-body" id="table-body">
+          <div class="state-msg"><div class="icon">⋯</div>Loading properties…</div>
+        </div>
+      </div>
+
+    </div><!-- /tab-properties -->
+
+    <!-- ── Archive Tab ── -->
+    <div class="tab-panel" id="tab-archive">
+
+      <div class="arc-search-wrap">
         <input
           type="text"
-          class="search-input"
-          id="search-input"
-          placeholder="Search by ID, address, owner, CID…"
+          class="arc-search-input"
+          id="arc-input"
+          placeholder="Enter house number to search history…"
         >
+        <button class="arc-search-btn" id="arc-search-btn">Search</button>
       </div>
-      <select class="filter-select" id="guild-filter">
-        <option value="">All Servers</option>
-      </select>
-      <select class="filter-select" id="status-filter">
-        <option value="">All Properties</option>
-        <option value="owned">Owned</option>
-        <option value="available">Available</option>
-      </select>
-    </div>
 
-    <div class="result-count" id="result-count"></div>
+      <div class="result-count" id="arc-count"></div>
 
-    <!-- Table -->
-    <div class="table-wrap">
-      <div class="table-header">
-        <span>ID</span>
-        <span>Address</span>
-        <span>Type</span>
-        <span>Price</span>
-        <span>Owner</span>
-        <span>CID</span>
-        <span>License</span>
-        <span>Status</span>
+      <div class="table-wrap">
+        <div class="arc-header">
+          <span>House #</span>
+          <span>Action</span>
+          <span>Owner</span>
+          <span>CID</span>
+          <span>Date</span>
+          <span>Performed By</span>
+        </div>
+        <div class="table-body" id="arc-body">
+          <div class="state-msg"><div class="icon">🗂</div>Enter a house number above to search the archive</div>
+        </div>
       </div>
-      <div class="table-body" id="table-body">
-        <div class="state-msg"><div class="icon">⋯</div>Loading properties…</div>
-      </div>
-    </div>
+
+    </div><!-- /tab-archive -->
 
   </div>
 
   <script>
-    function fmtPrice(n) {
-      n = Number(n);
-      if (n >= 1_000_000) return '$' + (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
-      if (n >= 1_000)     return '$' + Math.round(n / 1_000) + 'K';
-      return '$' + n.toLocaleString();
-    }
-
-    function fmtValue(n) {
-      n = Number(n);
-      if (n >= 1_000_000_000) return '$' + (n / 1_000_000_000).toFixed(1) + 'B';
-      if (n >= 1_000_000)     return '$' + (n / 1_000_000).toFixed(1) + 'M';
-      if (n >= 1_000)         return '$' + Math.round(n / 1_000) + 'K';
-      return '$' + n.toLocaleString();
-    }
-
     function esc(s) {
       if (s == null) return '';
       return String(s)
@@ -440,26 +548,48 @@
         .replace(/"/g, '&quot;');
     }
 
+    function dash(v) {
+      return esc(v) || '<span style="color:#2a2a2a">—</span>';
+    }
+
+    const ACTION_LABELS = {
+      add:          'Added',
+      transfer:     'Transferred',
+      repo:         'Repossessed',
+      notes_update: 'Notes Updated',
+      remove:       'Removed',
+    };
+
+    // ── Tabs ──────────────────────────────────────────────────────────────────
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // ── Session ───────────────────────────────────────────────────────────────
     async function initSession() {
       try {
         const res = await fetch('/api/session');
         if (!res.ok) return;
         const { guildId, guildName } = await res.json();
         if (guildId) {
-          // Guild-scoped login — hide the guild selector, show server name in header
           document.getElementById('guild-filter').style.display = 'none';
           document.getElementById('brand-sub').textContent = guildName || 'FiveM Real Estate';
         }
       } catch {}
     }
 
+    // ── Guilds ────────────────────────────────────────────────────────────────
     async function loadGuilds() {
       try {
         const res = await fetch('/api/guilds');
         if (!res.ok) return;
         const guilds = await res.json();
         const sel = document.getElementById('guild-filter');
-        // Clear existing options except "All Servers"
         while (sel.options.length > 1) sel.remove(1);
         guilds.forEach(g => {
           const opt = document.createElement('option');
@@ -467,7 +597,6 @@
           opt.textContent = g.name;
           sel.appendChild(opt);
         });
-        // If only one guild, auto-select it
         if (guilds.length === 1) {
           sel.value = guilds[0].id;
           loadStats();
@@ -476,6 +605,7 @@
       } catch {}
     }
 
+    // ── Stats ─────────────────────────────────────────────────────────────────
     async function loadStats() {
       try {
         const guild = document.getElementById('guild-filter').value;
@@ -484,13 +614,13 @@
         const res = await fetch('/api/stats?' + params.toString());
         if (!res.ok) return;
         const d = await res.json();
-        document.getElementById('stat-total').textContent  = d.total;
-        document.getElementById('stat-owned').textContent  = d.owned;
-        document.getElementById('stat-avail').textContent  = d.available;
-        document.getElementById('stat-market').textContent = fmtValue(d.total_value);
+        document.getElementById('stat-total').textContent = d.total;
+        document.getElementById('stat-owned').textContent = d.owned;
+        document.getElementById('stat-repo').textContent  = d.available;
       } catch {}
     }
 
+    // ── Properties ────────────────────────────────────────────────────────────
     async function loadProperties() {
       const search = document.getElementById('search-input').value.trim();
       const status = document.getElementById('status-filter').value;
@@ -509,8 +639,7 @@
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const rows = await res.json();
 
-        const countEl = document.getElementById('result-count');
-        countEl.textContent = rows.length
+        document.getElementById('result-count').textContent = rows.length
           ? `${rows.length} propert${rows.length === 1 ? 'y' : 'ies'}`
           : '';
 
@@ -519,28 +648,81 @@
           return;
         }
 
-        body.innerHTML = rows.map(p => `
-          <div class="table-row">
-            <div class="cell-id">${esc(p.property_id)}</div>
-            <div class="cell-address" title="${esc(p.address)}">${esc(p.address)}</div>
-            <div class="cell-type">${esc(p.address_type)}</div>
-            <div class="cell-price">${fmtPrice(p.price)}</div>
-            <div class="cell-owner" title="${esc(p.owner_name)}">${esc(p.owner_name) || '<span style="color:#2a2a2a">—</span>'}</div>
-            <div class="cell-cid">${esc(p.owner_cid) || '<span style="color:#2a2a2a">—</span>'}</div>
-            <div class="cell-license" title="${esc(p.owner_license)}">${esc(p.owner_license) || '<span style="color:#2a2a2a">—</span>'}</div>
-            <div>
-              <span class="pill ${p.status === 'owned' ? 'pill-owned' : 'pill-available'}">
-                ${p.status === 'owned' ? 'Owned' : 'Available'}
-              </span>
+        body.innerHTML = rows.map(p => {
+          const isRepo = p.status === 'repossessed';
+          return `
+            <div class="prop-row">
+              <div class="cell-id">${esc(p.property_id)}</div>
+              <div class="cell-postal">${dash(p.postal)}</div>
+              <div class="cell-tier" title="${esc(p.property_tier)}">${dash(p.property_tier)}</div>
+              <div class="cell-interior" title="${esc(p.interior_type)}">${dash(p.interior_type)}</div>
+              <div class="cell-owner" title="${esc(p.owner_name)}">${dash(p.owner_name)}</div>
+              <div class="cell-cid">${dash(p.owner_cid)}</div>
+              <div>
+                <span class="pill ${isRepo ? 'pill-repossessed' : 'pill-owned'}">
+                  ${isRepo ? 'Repossessed' : 'Owned'}
+                </span>
+              </div>
             </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       } catch {
         body.innerHTML = '<div class="state-msg"><div class="icon">⚠️</div>Failed to load properties</div>';
       }
     }
 
-    // Debounced search
+    // ── Archive ───────────────────────────────────────────────────────────────
+    async function loadArchive() {
+      const houseNumber = document.getElementById('arc-input').value.trim();
+      const guild       = document.getElementById('guild-filter').value;
+      const body        = document.getElementById('arc-body');
+
+      if (!houseNumber) {
+        body.innerHTML = '<div class="state-msg"><div class="icon">🗂</div>Enter a house number above to search the archive</div>';
+        document.getElementById('arc-count').textContent = '';
+        return;
+      }
+
+      body.innerHTML = '<div class="state-msg"><div class="icon">⋯</div>Searching…</div>';
+
+      try {
+        const params = new URLSearchParams({ house_number: houseNumber });
+        if (guild) params.set('guild', guild);
+        const res  = await fetch('/api/archive?' + params.toString());
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const rows = await res.json();
+
+        document.getElementById('arc-count').textContent = rows.length
+          ? `${rows.length} record${rows.length === 1 ? '' : 's'}`
+          : '';
+
+        if (rows.length === 0) {
+          body.innerHTML = '<div class="state-msg"><div class="icon">🔍</div>No history found for that house number</div>';
+          return;
+        }
+
+        body.innerHTML = rows.map(r => {
+          const label    = ACTION_LABELS[r.action] || r.action.toUpperCase();
+          const owner    = r.new_data?.owner_name ?? r.old_data?.owner_name ?? null;
+          const cid      = r.new_data?.owner_cid  ?? r.old_data?.owner_cid  ?? null;
+          const date     = new Date(r.created_at).toLocaleString();
+          return `
+            <div class="arc-row">
+              <div class="cell-id">${esc(r.property_id)}</div>
+              <div class="cell-action">${esc(label)}</div>
+              <div class="cell-owner" title="${esc(owner)}">${dash(owner)}</div>
+              <div class="cell-cid">${dash(cid)}</div>
+              <div class="cell-date">${esc(date)}</div>
+              <div class="cell-by" title="${esc(r.performed_by_tag)}">${esc(r.performed_by_tag)}</div>
+            </div>
+          `;
+        }).join('');
+      } catch {
+        body.innerHTML = '<div class="state-msg"><div class="icon">⚠️</div>Failed to load archive</div>';
+      }
+    }
+
+    // ── Event listeners ───────────────────────────────────────────────────────
     let searchTimer;
     document.getElementById('search-input').addEventListener('input', () => {
       clearTimeout(searchTimer);
@@ -552,9 +734,14 @@
     });
     document.getElementById('status-filter').addEventListener('change', loadProperties);
 
-    // Initial load
+    document.getElementById('arc-search-btn').addEventListener('click', loadArchive);
+    document.getElementById('arc-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') loadArchive();
+    });
+
+    // ── Initial load ──────────────────────────────────────────────────────────
     initSession();
-    loadGuilds();  // also triggers loadStats/loadProperties after guilds load
+    loadGuilds();
     loadStats();
     loadProperties();
 

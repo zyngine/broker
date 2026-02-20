@@ -7,10 +7,6 @@ function base(color) {
   return new EmbedBuilder().setColor(color).setFooter(FOOTER).setTimestamp();
 }
 
-function formatPrice(n) {
-  return `$${Number(n).toLocaleString()}`;
-}
-
 // ─── General ─────────────────────────────────────────────────────────────────
 
 function buildSuccessEmbed(title, description) {
@@ -30,18 +26,16 @@ function buildPermissionDeniedEmbed() {
 // ─── Property ────────────────────────────────────────────────────────────────
 
 function buildPropertyEmbed(property, titlePrefix = 'Property') {
-  const statusBadge = property.status === 'available' ? '🟡 Available' : '🟢 Owned';
+  const statusBadge = property.status === 'repossessed' ? '🔴 Repossessed' : '🟢 Owned';
   return base(colors.primary)
     .setTitle(`🏠  ${titlePrefix}  —  ${property.property_id}`)
     .addFields(
-      { name: 'Address',       value: property.address,                    inline: false },
-      { name: 'Type',          value: property.address_type,               inline: true  },
-      { name: 'Price',         value: formatPrice(property.price),         inline: true  },
-      { name: 'Status',        value: statusBadge,                         inline: true  },
-      { name: 'Owner Name',    value: property.owner_name    ?? 'N/A',     inline: true  },
-      { name: 'Owner CID',     value: property.owner_cid     ?? 'N/A',     inline: true  },
-      { name: 'Owner License', value: property.owner_license ?? 'N/A',     inline: false },
-      { name: 'Notes',         value: property.notes         ?? 'None',    inline: false },
+      { name: 'Status',        value: statusBadge,                          inline: true },
+      { name: 'Property Tier', value: property.property_tier ?? 'N/A',     inline: true },
+      { name: 'Interior Type', value: property.interior_type ?? 'N/A',     inline: true },
+      { name: 'Postal',        value: property.postal        ?? 'N/A',     inline: true },
+      { name: 'Owner',         value: property.owner_name    ?? 'N/A',     inline: true },
+      { name: 'CID',           value: property.owner_cid     ?? 'N/A',     inline: true },
     );
 }
 
@@ -51,10 +45,9 @@ function buildRepoConfirmEmbed(property) {
   return base(colors.danger)
     .setTitle(`⚠️  Confirm Repossession  —  ${property.property_id}`)
     .setDescription(
-      `This will clear all owner information and mark the property as **Available**.\n\n` +
+      `This will clear all owner information and mark the property as **Repossessed**.\n\n` +
       `**Current Owner:** ${property.owner_name ?? 'N/A'}\n` +
-      `**CID:** ${property.owner_cid ?? 'N/A'}\n` +
-      `**License:** ${property.owner_license ?? 'N/A'}\n\n` +
+      `**CID:** ${property.owner_cid ?? 'N/A'}\n\n` +
       `Are you sure?`
     );
 }
@@ -64,7 +57,7 @@ function buildRemoveConfirmEmbed(property) {
     .setTitle(`⚠️  Confirm Permanent Removal  —  ${property.property_id}`)
     .setDescription(
       `This will **permanently delete** this property record from the system.\n\n` +
-      `**Address:** ${property.address}\n` +
+      `**House Number:** ${property.property_id}\n` +
       `**Owner:** ${property.owner_name ?? 'N/A'}\n\n` +
       `This action **cannot be undone**. Are you sure?`
     );
@@ -77,14 +70,16 @@ function buildCancelledEmbed() {
 // ─── Search ──────────────────────────────────────────────────────────────────
 
 function buildSearchEmbed(property) {
-  const statusBadge = property.status === 'available' ? '🟡 Available' : '🟢 Owned';
+  const statusBadge = property.status === 'repossessed' ? '🔴 Repossessed' : '🟢 Owned';
   return base(colors.primary)
     .setTitle(`🔍  Property  —  ${property.property_id}`)
     .addFields(
-      { name: 'Address',    value: `${property.address} (${property.address_type})`, inline: false },
-      { name: 'Owner',      value: property.owner_name ?? 'N/A',                     inline: true  },
-      { name: 'Owner CID',  value: property.owner_cid  ?? 'N/A',                     inline: true  },
-      { name: 'Status',     value: statusBadge,                                      inline: true  },
+      { name: 'Status',        value: statusBadge,                      inline: true },
+      { name: 'Property Tier', value: property.property_tier ?? 'N/A', inline: true },
+      { name: 'Interior Type', value: property.interior_type ?? 'N/A', inline: true },
+      { name: 'Postal',        value: property.postal        ?? 'N/A', inline: true },
+      { name: 'Owner',         value: property.owner_name    ?? 'N/A', inline: true },
+      { name: 'CID',           value: property.owner_cid     ?? 'N/A', inline: true },
     );
 }
 
@@ -93,16 +88,16 @@ function buildSearchEmbed(property) {
 function buildAvailableEmbed(properties) {
   if (!properties.length) {
     return base(colors.accent)
-      .setTitle('🟡  Available Properties')
-      .setDescription('There are no available properties at this time.');
+      .setTitle('🔴  Repossessed Properties')
+      .setDescription('There are no repossessed properties at this time.');
   }
 
   const lines = properties.map((p) =>
-    `\`${p.property_id}\`  •  ${p.address}  •  ${formatPrice(p.price)}`
+    `\`${p.property_id}\`  •  ${p.property_tier ?? 'N/A'}  •  Postal: ${p.postal ?? 'N/A'}`
   );
 
   return base(colors.accent)
-    .setTitle(`🟡  Available Properties  (${properties.length})`)
+    .setTitle(`🔴  Repossessed Properties  (${properties.length})`)
     .setDescription(lines.join('\n'));
 }
 
@@ -152,20 +147,18 @@ function buildHistoryEmbed(propertyId, rows) {
 // ─── Stats ───────────────────────────────────────────────────────────────────
 
 function buildStatsEmbed(stats) {
-  const total     = Number(stats.total);
-  const owned     = Number(stats.owned);
-  const available = Number(stats.available);
-  const value     = Number(stats.total_value);
+  const total       = Number(stats.total);
+  const owned       = Number(stats.owned);
+  const repossessed = Number(stats.available);
 
   const ownedPct = total > 0 ? ((owned / total) * 100).toFixed(0) : 0;
 
   return base(colors.accent)
     .setTitle('📊  Real Estate Market Statistics')
     .addFields(
-      { name: 'Total Properties',   value: String(total),                 inline: true },
-      { name: 'Owned',              value: `${owned} (${ownedPct}%)`,     inline: true },
-      { name: 'Available',          value: String(available),             inline: true },
-      { name: 'Total Market Value', value: formatPrice(value),            inline: false },
+      { name: 'Total Properties', value: String(total),              inline: true },
+      { name: 'Owned',            value: `${owned} (${ownedPct}%)`, inline: true },
+      { name: 'Repossessed',      value: String(repossessed),        inline: true },
     );
 }
 
@@ -198,14 +191,14 @@ function buildAuditEmbed(opts) {
 
   if (action === 'add' && newData) {
     embed.addFields(
-      { name: 'Address',    value: `${newData.address} (${newData.address_type})`, inline: false },
-      { name: 'Owner',      value: newData.owner_name    ?? 'N/A',                 inline: true  },
-      { name: 'CID',        value: newData.owner_cid     ?? 'N/A',                 inline: true  },
-      { name: 'License',    value: newData.owner_license ?? 'N/A',                 inline: true  },
-      { name: 'Price',      value: formatPrice(newData.price),                     inline: true  },
+      { name: 'Property Tier', value: newData.property_tier ?? 'N/A', inline: true },
+      { name: 'Interior Type', value: newData.interior_type ?? 'N/A', inline: true },
+      { name: 'Postal',        value: newData.postal        ?? 'N/A', inline: true },
+      { name: 'Owner',         value: newData.owner_name    ?? 'N/A', inline: true },
+      { name: 'CID',           value: newData.owner_cid     ?? 'N/A', inline: true },
     );
   } else if (action === 'transfer' && oldData && newData) {
-    const fields = ['owner_name', 'owner_cid', 'owner_license', 'price', 'address', 'notes'];
+    const fields = ['owner_name', 'owner_cid', 'postal', 'property_tier', 'interior_type'];
     const diffs = fields.filter((f) => oldData[f] !== newData[f]);
     if (diffs.length) {
       const diffLines = diffs.map((f) =>
@@ -236,13 +229,12 @@ function buildAuditEmbed(opts) {
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 function buildDashboardEmbed(stats, tableText, page, totalPages) {
-  const total     = Number(stats.total);
-  const owned     = Number(stats.owned);
-  const available = Number(stats.available);
-  const value     = Number(stats.total_value);
+  const total       = Number(stats.total);
+  const owned       = Number(stats.owned);
+  const repossessed = Number(stats.available);
 
   const statsLine =
-    `\`Total: ${total}\`  •  \`Owned: ${owned}\`  •  \`Available: ${available}\`  •  \`Value: $${(value / 1_000_000).toFixed(1)}M\``;
+    `\`Total: ${total}\`  •  \`Owned: ${owned}\`  •  \`Repossessed: ${repossessed}\``;
 
   return new EmbedBuilder()
     .setColor(colors.accent)

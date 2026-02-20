@@ -1,12 +1,12 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { getConfig, getAvailableProperties } = require('../database/queries');
+const { getConfig, getRepossessedProperties } = require('../database/queries');
 const { checkPermission } = require('../utils/permissions');
 const { buildAvailableEmbed } = require('../utils/embeds');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('available')
-    .setDescription('List all available (repo\'d) properties ready for new owners'),
+    .setDescription('List all repossessed properties available for new owners'),
 
   async execute(client, interaction) {
     const guildId = interaction.guildId;
@@ -16,7 +16,7 @@ module.exports = {
 
     await interaction.deferReply();
 
-    const properties = await getAvailableProperties(guildId);
+    const properties = await getRepossessedProperties(guildId);
 
     return interaction.editReply({ embeds: [buildAvailableEmbed(properties)] });
   },

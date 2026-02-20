@@ -50,3 +50,10 @@ CREATE INDEX IF NOT EXISTS idx_history_created  ON property_history(created_at D
 
 -- Migrations (safe to run repeatedly)
 ALTER TABLE bot_config ADD COLUMN IF NOT EXISTS dashboard_password VARCHAR(255);
+
+ALTER TABLE properties ALTER COLUMN address     DROP NOT NULL;
+ALTER TABLE properties ALTER COLUMN address_type DROP NOT NULL;
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS postal        VARCHAR(20);
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS property_tier VARCHAR(50);
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS interior_type VARCHAR(100);
+UPDATE properties SET status = 'repossessed' WHERE status = 'available';

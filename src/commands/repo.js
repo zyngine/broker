@@ -6,7 +6,7 @@ const { buildErrorEmbed, buildRepoConfirmEmbed } = require('../utils/embeds');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('repo')
-    .setDescription('[ADMIN] Repossess a property — clears all owner info and marks it as available')
+    .setDescription('[ADMIN] Repossess a property — clears owner info and marks it as Repossessed')
     .addStringOption((o) =>
       o.setName('property_id')
         .setDescription('The Property ID to repossess')
@@ -29,9 +29,9 @@ module.exports = {
       });
     }
 
-    if (property.status === 'available') {
+    if (property.status === 'repossessed') {
       return interaction.reply({
-        embeds: [buildErrorEmbed(`Property \`${propertyId}\` is already available.`)],
+        embeds: [buildErrorEmbed(`Property \`${propertyId}\` is already repossessed.`)],
         ephemeral: true,
       });
     }

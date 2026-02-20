@@ -3,7 +3,7 @@ const path = require('path');
 const crypto = require('crypto');
 const {
   getAllPropertiesForWeb, countAllPropertiesForWeb,
-  getDistinctGuildIds, getGuildByDashboardPassword,
+  getDistinctGuildIds, getGuildByDashboardPassword, getArchiveHistory,
 } = require('./src/database/queries');
 
 const PORT = process.env.PORT || 3000;
@@ -169,6 +169,20 @@ function startWebServer(client) {
       res.json(properties);
     } catch (err) {
       console.error('[Web] /api/properties error:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  // Archive API — search property_history by house number
+  app.get('/api/archive', requireAuth, async (req, res) => {
+    try {
+      const session = getSession(req);
+      const guildId = session.guildId ?? req.query.guild ?? null;
+      const { house_number } = req.query;
+      const rows = await getArchiveHistory({ guildId, houseNumber: house_number || null });
+      res.json(rows);
+    } catch (err) {
+      console.error('[Web] /api/archive error:', err);
       res.status(500).json({ error: 'Database error' });
     }
   });

@@ -46,13 +46,13 @@ async function setDashboardMessageId(guildId, messageId) {
 // ─── Properties ───────────────────────────────────────────────────────────────
 
 async function createProperty(guildId, data) {
-  const { property_id, address, address_type, price, owner_name, owner_cid, owner_license, notes } = data;
+  const { property_id, owner_name, owner_cid, postal, property_tier, interior_type } = data;
   const { rows } = await pool.query(
     `INSERT INTO properties
-       (property_id, guild_id, address, address_type, price, owner_name, owner_cid, owner_license, notes, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'owned')
+       (property_id, guild_id, owner_name, owner_cid, postal, property_tier, interior_type, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, 'owned')
      RETURNING *`,
-    [property_id, guildId, address, address_type, price, owner_name, owner_cid, owner_license, notes ?? null]
+    [property_id, guildId, owner_name, owner_cid, postal, property_tier, interior_type]
   );
   return rows[0];
 }
@@ -66,21 +66,19 @@ async function getProperty(guildId, propertyId) {
 }
 
 async function updateProperty(guildId, propertyId, data) {
-  const { address, address_type, price, owner_name, owner_cid, owner_license, notes } = data;
+  const { owner_name, owner_cid, postal, property_tier, interior_type } = data;
   const { rows } = await pool.query(
     `UPDATE properties SET
-       address       = $3,
-       address_type  = $4,
-       price         = $5,
-       owner_name    = $6,
-       owner_cid     = $7,
-       owner_license = $8,
-       notes         = $9,
+       owner_name    = $3,
+       owner_cid     = $4,
+       postal        = $5,
+       property_tier = $6,
+       interior_type = $7,
        status        = 'owned',
        updated_at    = NOW()
      WHERE guild_id = $1 AND property_id = $2
      RETURNING *`,
-    [guildId, propertyId, address, address_type, price, owner_name, owner_cid, owner_license, notes ?? null]
+    [guildId, propertyId, owner_name, owner_cid, postal, property_tier, interior_type]
   );
   return rows[0] ?? null;
 }
@@ -100,9 +98,7 @@ async function repoProperty(guildId, propertyId) {
     `UPDATE properties SET
        owner_name    = NULL,
        owner_cid     = NULL,
-       owner_license = NULL,
-       notes         = NULL,
-       status        = 'available',
+       status        = 'repossessed',
        updated_at    = NOW()
      WHERE guild_id = $1 AND property_id = $2
      RETURNING *`,
@@ -119,9 +115,9 @@ async function deleteProperty(guildId, propertyId) {
   return rows[0] ?? null;
 }
 
-async function getAvailableProperties(guildId) {
+async function getRepossessedProperties(guildId) {
   const { rows } = await pool.query(
-    `SELECT * FROM properties WHERE guild_id = $1 AND status = 'available' ORDER BY property_id ASC`,
+    `SELECT * FROM properties WHERE guild_id = $1 AND status = 'repossessed' ORDER BY property_id ASC`,
     [guildId]
   );
   return rows;
@@ -138,10 +134,9 @@ async function getAllProperties(guildId, { limit, offset }) {
 async function countProperties(guildId) {
   const { rows } = await pool.query(
     `SELECT
-       COUNT(*)                              AS total,
-       COUNT(*) FILTER (WHERE status = 'owned')     AS owned,
-       COUNT(*) FILTER (WHERE status = 'available') AS available,
-       COALESCE(SUM(price), 0)              AS total_value
+       COUNT(*)                                        AS total,
+       COUNT(*) FILTER (WHERE status = 'owned')       AS owned,
+       COUNT(*) FILTER (WHERE status = 'repossessed') AS available
      FROM properties WHERE guild_id = $1`,
     [guildId]
   );
@@ -174,7 +169,7 @@ async function getPropertyHistory(guildId, propertyId) {
   return rows;
 }
 
-// ─── Web Dashboard Queries (cross-guild) ─────────────────────────────────────
+// ─── Web Dashboard Queries ────────────────────────────────────────────────────
 
 async function getAllPropertiesForWeb({ search, status, guildId } = {}) {
   let query = 'SELECT * FROM properties WHERE 1=1';
@@ -191,7 +186,7 @@ async function getAllPropertiesForWeb({ search, status, guildId } = {}) {
   if (search) {
     params.push(`%${search}%`);
     const n = params.length;
-    query += ` AND (property_id ILIKE $${n} OR address ILIKE $${n} OR owner_name ILIKE $${n} OR owner_cid ILIKE $${n})`;
+    query += ` AND (property_id ILIKE $${n} OR owner_name ILIKE $${n} OR owner_cid ILIKE $${n} OR postal ILIKE $${n} OR property_tier ILIKE $${n})`;
   }
 
   query += ' ORDER BY property_id ASC';
@@ -208,10 +203,9 @@ async function countAllPropertiesForWeb({ guildId } = {}) {
   }
   const { rows } = await pool.query(
     `SELECT
-       COUNT(*)                                     AS total,
-       COUNT(*) FILTER (WHERE status = 'owned')     AS owned,
-       COUNT(*) FILTER (WHERE status = 'available') AS available,
-       COALESCE(SUM(price), 0)                      AS total_value
+       COUNT(*)                                        AS total,
+       COUNT(*) FILTER (WHERE status = 'owned')       AS owned,
+       COUNT(*) FILTER (WHERE status = 'repossessed') AS available
      FROM properties ${where}`,
     params
   );
@@ -225,10 +219,28 @@ async function getDistinctGuildIds() {
   return rows.map((r) => r.guild_id);
 }
 
+async function getArchiveHistory({ guildId, houseNumber } = {}) {
+  const params = [];
+  let query = 'SELECT * FROM property_history WHERE 1=1';
+
+  if (guildId) {
+    params.push(guildId);
+    query += ` AND guild_id = $${params.length}`;
+  }
+  if (houseNumber) {
+    params.push(houseNumber.toUpperCase());
+    query += ` AND property_id = $${params.length}`;
+  }
+
+  query += ' ORDER BY created_at DESC LIMIT 100';
+  const { rows } = await pool.query(query, params);
+  return rows;
+}
+
 module.exports = {
   getConfig, upsertConfig, setDashboardMessageId, getGuildByDashboardPassword,
   createProperty, getProperty, updateProperty, updateNotes, repoProperty, deleteProperty,
-  getAvailableProperties, getAllProperties, countProperties,
+  getRepossessedProperties, getAllProperties, countProperties,
   insertHistory, getPropertyHistory,
-  getAllPropertiesForWeb, countAllPropertiesForWeb, getDistinctGuildIds,
+  getAllPropertiesForWeb, countAllPropertiesForWeb, getDistinctGuildIds, getArchiveHistory,
 };
