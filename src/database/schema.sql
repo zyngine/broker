@@ -47,3 +47,6 @@ CREATE TABLE IF NOT EXISTS property_history (
 
 CREATE INDEX IF NOT EXISTS idx_history_property ON property_history(guild_id, property_id);
 CREATE INDEX IF NOT EXISTS idx_history_created  ON property_history(created_at DESC);
+
+-- Migrations (safe to run repeatedly)
+ALTER TABLE bot_config ADD COLUMN IF NOT EXISTS dashboard_password VARCHAR(255);

@@ -28,6 +28,11 @@ module.exports = {
       o.setName('agent_role')
         .setDescription('Role with access to add, transfer, notes, and read commands')
         .setRequired(true)
+    )
+    .addStringOption((o) =>
+      o.setName('dashboard_password')
+        .setDescription('Password for this server\'s web dashboard (leave blank to keep existing)')
+        .setRequired(false)
     ),
 
   async execute(client, interaction) {
@@ -47,16 +52,18 @@ module.exports = {
 
     await interaction.deferReply({ ephemeral: true });
 
-    const dashChannel  = interaction.options.getChannel('dashboard_channel');
-    const auditChannel = interaction.options.getChannel('audit_channel');
-    const adminRole    = interaction.options.getRole('admin_role');
-    const agentRole    = interaction.options.getRole('agent_role');
+    const dashChannel       = interaction.options.getChannel('dashboard_channel');
+    const auditChannel      = interaction.options.getChannel('audit_channel');
+    const adminRole         = interaction.options.getRole('admin_role');
+    const agentRole         = interaction.options.getRole('agent_role');
+    const dashboardPassword = interaction.options.getString('dashboard_password') ?? null;
 
     const newConfig = await upsertConfig(guildId, {
       dashboard_channel_id: dashChannel.id,
       audit_channel_id: auditChannel.id,
       admin_role_id: adminRole.id,
       agent_role_id: agentRole.id,
+      dashboard_password: dashboardPassword,
     });
 
     // Post initial dashboard

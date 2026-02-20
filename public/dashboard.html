@@ -342,7 +342,7 @@
     <div class="header-brand">
       <span class="brand-name">Broker</span>
       <div class="brand-sep"></div>
-      <span class="brand-sub">FiveM Real Estate</span>
+      <span class="brand-sub" id="brand-sub">FiveM Real Estate</span>
     </div>
     <a href="/api/logout" class="logout-btn">Logout</a>
   </div>
@@ -438,6 +438,19 @@
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
+    }
+
+    async function initSession() {
+      try {
+        const res = await fetch('/api/session');
+        if (!res.ok) return;
+        const { guildId, guildName } = await res.json();
+        if (guildId) {
+          // Guild-scoped login — hide the guild selector, show server name in header
+          document.getElementById('guild-filter').style.display = 'none';
+          document.getElementById('brand-sub').textContent = guildName || 'FiveM Real Estate';
+        }
+      } catch {}
     }
 
     async function loadGuilds() {
@@ -540,6 +553,7 @@
     document.getElementById('status-filter').addEventListener('change', loadProperties);
 
     // Initial load
+    initSession();
     loadGuilds();  // also triggers loadStats/loadProperties after guilds load
     loadStats();
     loadProperties();

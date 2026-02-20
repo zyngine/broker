@@ -11,20 +11,29 @@ async function getConfig(guildId) {
 }
 
 async function upsertConfig(guildId, fields) {
-  const { dashboard_channel_id, audit_channel_id, admin_role_id, agent_role_id } = fields;
+  const { dashboard_channel_id, audit_channel_id, admin_role_id, agent_role_id, dashboard_password } = fields;
   const { rows } = await pool.query(
-    `INSERT INTO bot_config (guild_id, dashboard_channel_id, audit_channel_id, admin_role_id, agent_role_id, updated_at)
-     VALUES ($1, $2, $3, $4, $5, NOW())
+    `INSERT INTO bot_config (guild_id, dashboard_channel_id, audit_channel_id, admin_role_id, agent_role_id, dashboard_password, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, NOW())
      ON CONFLICT (guild_id) DO UPDATE SET
        dashboard_channel_id = EXCLUDED.dashboard_channel_id,
        audit_channel_id     = EXCLUDED.audit_channel_id,
        admin_role_id        = EXCLUDED.admin_role_id,
        agent_role_id        = EXCLUDED.agent_role_id,
+       dashboard_password   = COALESCE(EXCLUDED.dashboard_password, bot_config.dashboard_password),
        updated_at           = NOW()
      RETURNING *`,
-    [guildId, dashboard_channel_id, audit_channel_id, admin_role_id, agent_role_id]
+    [guildId, dashboard_channel_id, audit_channel_id, admin_role_id, agent_role_id, dashboard_password ?? null]
   );
   return rows[0];
+}
+
+async function getGuildByDashboardPassword(password) {
+  const { rows } = await pool.query(
+    `SELECT * FROM bot_config WHERE dashboard_password = $1 LIMIT 1`,
+    [password]
+  );
+  return rows[0] ?? null;
 }
 
 async function setDashboardMessageId(guildId, messageId) {
@@ -217,7 +226,7 @@ async function getDistinctGuildIds() {
 }
 
 module.exports = {
-  getConfig, upsertConfig, setDashboardMessageId,
+  getConfig, upsertConfig, setDashboardMessageId, getGuildByDashboardPassword,
   createProperty, getProperty, updateProperty, updateNotes, repoProperty, deleteProperty,
   getAvailableProperties, getAllProperties, countProperties,
   insertHistory, getPropertyHistory,
