@@ -245,11 +245,11 @@
       overflow: hidden;
     }
 
-    /* Properties table: House# | Postal | Tier | Prop. Type | Owner | CID | Price | Status */
+    /* Properties table: House# | Postal | Tier | Prop. Type | Owner | CID | Price | Last Updated | Status */
     .prop-header,
     .prop-row {
       display: grid;
-      grid-template-columns: 110px 90px 1.1fr 1.4fr 1.3fr 1fr 90px 100px;
+      grid-template-columns: 110px 90px 1.1fr 1.4fr 1.3fr 1fr 90px 155px 100px;
       align-items: center;
     }
 
@@ -292,8 +292,14 @@
     }
     .cell-postal {
       font-size: 0.8rem;
-      color: #666;
+      color: #4ade80;
       font-variant-numeric: tabular-nums;
+    }
+    .cell-updated {
+      font-size: 0.75rem;
+      color: #444;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
     .cell-tier {
       font-size: 0.82rem;
@@ -504,6 +510,7 @@
           <span>Owner</span>
           <span>CID</span>
           <span>Price</span>
+          <span>Last Updated</span>
           <span>Status</span>
         </div>
         <div class="table-body" id="table-body">
@@ -684,6 +691,7 @@
               <div class="cell-owner" title="${esc(p.owner_name)}">${dash(p.owner_name)}</div>
               <div class="cell-cid">${dash(p.owner_cid)}</div>
               <div class="cell-price">${priceStr ? esc(priceStr) : '<span style="color:#2a2a2a">—</span>'}</div>
+              <div class="cell-updated">${p.updated_at ? esc(toEST(p.updated_at)) : '<span style="color:#2a2a2a">—</span>'}</div>
               <div>
                 <span class="pill ${isRepo ? 'pill-repossessed' : 'pill-owned'}">
                   ${isRepo ? 'Repossessed' : 'Owned'}
