@@ -216,11 +216,11 @@
       overflow: hidden;
     }
 
-    /* grid columns: ID | Address | Type | Price | Owner | CID | Status */
+    /* grid columns: ID | Address | Type | Price | Owner | CID | License | Status */
     .table-header,
     .table-row {
       display: grid;
-      grid-template-columns: 100px 2fr 1fr 1fr 1.3fr 0.9fr 96px;
+      grid-template-columns: 100px 2fr 1fr 1fr 1.3fr 0.9fr 1.8fr 96px;
       align-items: center;
     }
 
@@ -282,6 +282,15 @@
       font-size: 0.8rem;
       color: #555;
       font-variant-numeric: tabular-nums;
+    }
+    .cell-license {
+      font-size: 0.75rem;
+      color: #444;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 14px;
     }
 
     /* Status pills */
@@ -396,6 +405,7 @@
         <span>Price</span>
         <span>Owner</span>
         <span>CID</span>
+        <span>License</span>
         <span>Status</span>
       </div>
       <div class="table-body" id="table-body">
@@ -504,6 +514,7 @@
             <div class="cell-price">${fmtPrice(p.price)}</div>
             <div class="cell-owner" title="${esc(p.owner_name)}">${esc(p.owner_name) || '<span style="color:#2a2a2a">—</span>'}</div>
             <div class="cell-cid">${esc(p.owner_cid) || '<span style="color:#2a2a2a">—</span>'}</div>
+            <div class="cell-license" title="${esc(p.owner_license)}">${esc(p.owner_license) || '<span style="color:#2a2a2a">—</span>'}</div>
             <div>
               <span class="pill ${p.status === 'owned' ? 'pill-owned' : 'pill-available'}">
                 ${p.status === 'owned' ? 'Owned' : 'Available'}
