@@ -246,11 +246,11 @@
       overflow: hidden;
     }
 
-    /* Properties table: House# | Postal | Tier | Prop. Type | Owner | CID | Price | Last Updated | Status | Sold By */
+    /* Properties table: House# | Postal | Tier | Prop. Type | Owner | CID | Price | Last Updated | Status | Sold By | Insurance */
     .prop-header,
     .prop-row {
       display: grid;
-      grid-template-columns: 110px 90px 1.1fr 1.4fr 1.3fr 1fr 90px 155px 100px 1fr;
+      grid-template-columns: 110px 90px 1.1fr 1.4fr 1.3fr 1fr 90px 155px 100px 1fr 100px;
       align-items: center;
     }
 
@@ -396,6 +396,17 @@
       border: 1px solid rgba(239, 68, 68, 0.22);
     }
     .pill-repossessed::before { background: #ef4444; }
+    .pill-insured {
+      background: rgba(74, 222, 128, 0.12);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.25);
+      text-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
+    }
+    .pill-insured::before { background: #4ade80; }
+    .cell-uninsured {
+      font-size: 0.82rem;
+      color: #2a2a2a;
+    }
 
     /* Empty / loading states */
     .state-msg {
@@ -528,6 +539,7 @@
           <span>Last Updated</span>
           <span>Status</span>
           <span>Sold By</span>
+          <span>Insurance</span>
         </div>
         <div class="table-body" id="table-body">
           <div class="state-msg"><div class="icon">⋯</div>Loading properties…</div>
@@ -700,8 +712,9 @@
         }
 
         body.innerHTML = rows.map(p => {
-          const isRepo = p.status === 'repossessed';
-          const priceStr = fmtPrice(p.price);
+          const isRepo    = p.status === 'repossessed';
+          const isInsured = !!p.has_stash_insurance;
+          const priceStr  = fmtPrice(p.price);
           return `
             <div class="prop-row">
               <div class="cell-id">${esc(p.property_id)}</div>
@@ -718,6 +731,11 @@
                 </span>
               </div>
               <div class="cell-sold-by" title="${esc(p.sold_by)}">${dash(p.sold_by)}</div>
+              <div>
+                ${isInsured
+                  ? '<span class="pill pill-insured">Insured</span>'
+                  : '<span class="cell-uninsured">—</span>'}
+              </div>
             </div>
           `;
         }).join('');

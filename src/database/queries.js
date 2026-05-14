@@ -46,13 +46,13 @@ async function setDashboardMessageId(guildId, messageId) {
 // ─── Properties ───────────────────────────────────────────────────────────────
 
 async function createProperty(guildId, data) {
-  const { property_id, owner_name, owner_cid, postal, property_tier, interior_type, price, sold_by } = data;
+  const { property_id, owner_name, owner_cid, postal, property_tier, interior_type, price, sold_by, has_stash_insurance } = data;
   const { rows } = await pool.query(
     `INSERT INTO properties
-       (property_id, guild_id, owner_name, owner_cid, postal, property_tier, interior_type, price, sold_by, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'owned')
+       (property_id, guild_id, owner_name, owner_cid, postal, property_tier, interior_type, price, sold_by, has_stash_insurance, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'owned')
      RETURNING *`,
-    [property_id, guildId, owner_name, owner_cid, postal, property_tier, interior_type, price ?? 0, sold_by ?? null]
+    [property_id, guildId, owner_name, owner_cid, postal, property_tier, interior_type, price ?? 0, sold_by ?? null, has_stash_insurance ?? false]
   );
   return rows[0];
 }
@@ -66,21 +66,22 @@ async function getProperty(guildId, propertyId) {
 }
 
 async function updateProperty(guildId, propertyId, data) {
-  const { owner_name, owner_cid, postal, property_tier, interior_type, price, sold_by } = data;
+  const { owner_name, owner_cid, postal, property_tier, interior_type, price, sold_by, has_stash_insurance } = data;
   const { rows } = await pool.query(
     `UPDATE properties SET
-       owner_name    = $3,
-       owner_cid     = $4,
-       postal        = $5,
-       property_tier = $6,
-       interior_type = $7,
-       price         = $8,
-       sold_by       = $9,
-       status        = 'owned',
-       updated_at    = NOW()
+       owner_name          = $3,
+       owner_cid           = $4,
+       postal              = $5,
+       property_tier       = $6,
+       interior_type       = $7,
+       price               = $8,
+       sold_by             = $9,
+       has_stash_insurance = $10,
+       status              = 'owned',
+       updated_at          = NOW()
      WHERE guild_id = $1 AND property_id = $2
      RETURNING *`,
-    [guildId, propertyId, owner_name, owner_cid, postal, property_tier, interior_type, price ?? 0, sold_by ?? null]
+    [guildId, propertyId, owner_name, owner_cid, postal, property_tier, interior_type, price ?? 0, sold_by ?? null, has_stash_insurance ?? false]
   );
   return rows[0] ?? null;
 }

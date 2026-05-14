@@ -42,7 +42,8 @@ function buildPermissionDeniedEmbed() {
 // ─── Property ────────────────────────────────────────────────────────────────
 
 function buildPropertyEmbed(property, titlePrefix = 'Property') {
-  const statusBadge = property.status === 'repossessed' ? '🔴 Repossessed' : '🟢 Owned';
+  const statusBadge   = property.status === 'repossessed' ? '🔴 Repossessed' : '🟢 Owned';
+  const insuredBadge  = property.has_stash_insurance ? '🛡️ Yes' : '— No';
   return base(colors.primary)
     .setTitle(`🏠  ${titlePrefix}  —  ${property.property_id}`)
     .addFields(
@@ -54,6 +55,7 @@ function buildPropertyEmbed(property, titlePrefix = 'Property') {
       { name: 'Sold By',       value: property.sold_by       ?? 'N/A',     inline: true },
       { name: 'Owner',         value: property.owner_name    ?? 'N/A',     inline: true },
       { name: 'CID',           value: property.owner_cid     ?? 'N/A',     inline: true },
+      { name: 'Stash Insurance', value: insuredBadge,                       inline: true },
     );
 }
 
@@ -110,7 +112,8 @@ function buildCancelledEmbed() {
 // ─── Search ──────────────────────────────────────────────────────────────────
 
 function buildSearchEmbed(property) {
-  const statusBadge = property.status === 'repossessed' ? '🔴 Repossessed' : '🟢 Owned';
+  const statusBadge  = property.status === 'repossessed' ? '🔴 Repossessed' : '🟢 Owned';
+  const insuredBadge = property.has_stash_insurance ? '🛡️ Yes' : '— No';
   return base(colors.primary)
     .setTitle(`🔍  Property  —  ${property.property_id}`)
     .addFields(
@@ -122,6 +125,7 @@ function buildSearchEmbed(property) {
       { name: 'Sold By',       value: property.sold_by       ?? 'N/A', inline: true },
       { name: 'Owner',         value: property.owner_name    ?? 'N/A', inline: true },
       { name: 'CID',           value: property.owner_cid     ?? 'N/A', inline: true },
+      { name: 'Stash Insurance', value: insuredBadge,                   inline: true },
     );
 }
 
@@ -228,13 +232,14 @@ function buildSetupEmbed(config, dashChannel, auditChannel, adminRole, agentRole
 // ─── Audit ───────────────────────────────────────────────────────────────────
 
 const FIELD_LABELS = {
-  owner_name:    'Owner',
-  owner_cid:     'CID',
-  postal:        'Postal',
-  property_tier: 'Property Tier',
-  interior_type: 'Property Type',
-  price:         'Price',
-  sold_by:       'Sold By',
+  owner_name:          'Owner',
+  owner_cid:           'CID',
+  postal:              'Postal',
+  property_tier:       'Property Tier',
+  interior_type:       'Property Type',
+  price:               'Price',
+  sold_by:             'Sold By',
+  has_stash_insurance: 'Stash Insurance',
 };
 
 function buildAuditEmbed(opts) {
@@ -251,23 +256,27 @@ function buildAuditEmbed(opts) {
 
   if (action === 'add' && newData) {
     embed.addFields(
-      { name: 'Property Tier', value: newData.property_tier ?? 'N/A', inline: true },
-      { name: 'Property Type', value: newData.interior_type ?? 'N/A', inline: true },
-      { name: 'Postal',        value: newData.postal        ?? 'N/A', inline: true },
-      { name: 'Price',         value: formatPrice(newData.price),     inline: true },
-      { name: 'Sold By',       value: newData.sold_by       ?? 'N/A', inline: true },
-      { name: 'Owner',         value: newData.owner_name    ?? 'N/A', inline: true },
-      { name: 'CID',           value: newData.owner_cid     ?? 'N/A', inline: true },
+      { name: 'Property Tier',   value: newData.property_tier ?? 'N/A',                        inline: true },
+      { name: 'Property Type',   value: newData.interior_type ?? 'N/A',                        inline: true },
+      { name: 'Postal',          value: newData.postal        ?? 'N/A',                        inline: true },
+      { name: 'Price',           value: formatPrice(newData.price),                            inline: true },
+      { name: 'Sold By',         value: newData.sold_by       ?? 'N/A',                        inline: true },
+      { name: 'Owner',           value: newData.owner_name    ?? 'N/A',                        inline: true },
+      { name: 'CID',             value: newData.owner_cid     ?? 'N/A',                        inline: true },
+      { name: 'Stash Insurance', value: newData.has_stash_insurance ? '🛡️ Yes' : '— No',     inline: true },
     );
   } else if (action === 'transfer' && oldData && newData) {
-    const fields = ['owner_name', 'owner_cid', 'postal', 'property_tier', 'interior_type', 'price', 'sold_by'];
+    const fields = ['owner_name', 'owner_cid', 'postal', 'property_tier', 'interior_type', 'price', 'sold_by', 'has_stash_insurance'];
+    const fmt = (f, v) => {
+      if (f === 'price')               return formatPrice(v);
+      if (f === 'has_stash_insurance') return v ? '🛡️ Yes' : '— No';
+      return v ?? 'N/A';
+    };
     const diffs = fields.filter((f) => String(oldData[f]) !== String(newData[f]));
     if (diffs.length) {
       const diffLines = diffs.map((f) => {
         const label = FIELD_LABELS[f] ?? f;
-        const oldVal = f === 'price' ? formatPrice(oldData[f]) : (oldData[f] ?? 'N/A');
-        const newVal = f === 'price' ? formatPrice(newData[f]) : (newData[f] ?? 'N/A');
-        return `**${label}:** ${oldVal} → ${newVal}`;
+        return `**${label}:** ${fmt(f, oldData[f])} → ${fmt(f, newData[f])}`;
       }).join('\n');
       embed.addFields({ name: 'Changes', value: diffLines, inline: false });
     }

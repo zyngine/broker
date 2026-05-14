@@ -4,6 +4,7 @@
  */
 
 const COL = {
+  ins:     3,
   house:  10,
   postal:  8,
   tier:   14,
@@ -28,14 +29,15 @@ function formatPrice(val) {
 
 function buildRow(values) {
   return (
-    pad(values[0], COL.house)  + ' │ ' +
-    pad(values[1], COL.postal) + ' │ ' +
-    pad(values[2], COL.tier)   + ' │ ' +
-    pad(values[3], COL.type)   + ' │ ' +
-    pad(values[4], COL.owner)  + ' │ ' +
-    pad(values[5], COL.cid)    + ' │ ' +
-    pad(values[6], COL.price)  + ' │ ' +
-    pad(values[7], COL.status)
+    pad(values[0], COL.ins)    + ' │ ' +
+    pad(values[1], COL.house)  + ' │ ' +
+    pad(values[2], COL.postal) + ' │ ' +
+    pad(values[3], COL.tier)   + ' │ ' +
+    pad(values[4], COL.type)   + ' │ ' +
+    pad(values[5], COL.owner)  + ' │ ' +
+    pad(values[6], COL.cid)    + ' │ ' +
+    pad(values[7], COL.price)  + ' │ ' +
+    pad(values[8], COL.status)
   );
 }
 
@@ -44,7 +46,7 @@ const SEPARATOR = '─'.repeat(
   (Object.keys(COL).length - 1) * 3
 );
 
-const HEADER = buildRow(['House #', 'Postal', 'Tier', 'Prop. Type', 'Owner', 'CID', 'Price', 'Status']);
+const HEADER = buildRow(['Ins', 'House #', 'Postal', 'Tier', 'Prop. Type', 'Owner', 'CID', 'Price', 'Status']);
 
 /**
  * @param {Array} properties - rows from DB
@@ -57,6 +59,7 @@ function formatPropertyTable(properties) {
 
   const rows = properties.map((p) =>
     buildRow([
+      p.has_stash_insurance ? '🛡️' : '',
       p.property_id,
       p.postal         ?? '—',
       p.property_tier  ?? '—',

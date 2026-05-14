@@ -89,14 +89,15 @@ module.exports = {
       // ── Create the new property record ───────────────────────────────────
       const sold_by = interaction.member.displayName;
       const newProperty = await createProperty(guildId, {
-        property_id:   newId,
-        owner_name:    oldProperty.owner_name,
-        owner_cid:     oldProperty.owner_cid,
+        property_id:         newId,
+        owner_name:          oldProperty.owner_name,
+        owner_cid:           oldProperty.owner_cid,
         postal,
-        property_tier: oldProperty.property_tier,
-        interior_type: propertyType,
+        property_tier:       oldProperty.property_tier,
+        interior_type:       propertyType,
         price,
         sold_by,
+        has_stash_insurance: oldProperty.has_stash_insurance ?? false,
       });
 
       // ── Archive: record house_change on the OLD house number ─────────────
